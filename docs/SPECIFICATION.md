@@ -147,8 +147,8 @@ Personal stats stay on the device (no account needed); global stats are aggregat
 ### Global daily stats (server)
 
 - Number of players who finished the day's game.
-- Median guesses (main metric, hardly affected by cheaters) and average.
-- Percentage of players who found it in 5 guesses or fewer.
+- Median guesses over won games (main metric, hardly affected by cheaters) and average.
+- Percentage of all players who won in 5 guesses or fewer.
 - Most common first guess.
 - Computed per local date: each date has its own mystery country and its own stats (section 9).
 - Only games validated by a server token and not flagged as suspect are counted (section 9).
@@ -241,7 +241,7 @@ Everything fits in Cloudflare's free tier (front end, API, database) plus GitHub
 
 Since September 1, 2026, free-tier D1 queries fail once the daily limit is exceeded: the front end must handle this error (NFR-07) and hide the global stats without breaking the game.
 
-Whether the Rate Limiting binding is available on the free tier, and its exact limits, must be checked at the start of week 2. It counts per data centre and approximately, which is enough for anti-abuse.
+Whether the Rate Limiting binding is available on the free tier, and its exact limits, must be checked on the first deployment: local `wrangler dev` does not enforce it, so only the logic is tested (with a fake limiter). It counts per data centre and approximately, which is enough for anti-abuse.
 
 Sources: [Workers free limits](https://eastondev.com/blog/en/posts/dev/20260526-cloudflare-free-limits/), [D1 pricing](https://developers.cloudflare.com/d1/platform/pricing/), [D1 limits](https://developers.cloudflare.com/d1/platform/limits/index.md), [D1 free tier enforcement](https://developers.cloudflare.com/changelog/post/2026-09-01-d1-free-tier-limit-enforcement/).
 
@@ -253,16 +253,25 @@ Four endpoints are enough; none returns the mystery country while the game is in
 | -------------------------------- | --------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------- |
 | `POST /api/start`                | `{ date, sessionId }` | `{ dayNumber, token }`                          | Date validated (NFR-03); signed token with no guesses                                             |
 | `POST /api/guess`                | `{ token, iso3 }`     | `{ distanceKm, band, correct, answer?, token }` | Invalid token: 401; country already guessed or game over: 409; `answer` present only if `correct` |
-| `POST /api/finish`               | `{ token }`           | `{ answer, globalStats }`                       | Win and guess count read from the token; one finish per `sessionId` and date (409 otherwise)      |
+| `POST /api/finish`               | `{ token }`           | `{ answer, won, guesses, globalStats }`         | Win and guess count read from the token; one finish per `sessionId` and date (409 otherwise)      |
 | `GET /api/stats?date=YYYY-MM-DD` | date                  | aggregated global stats                         | Cached for 5 min                                                                                  |
 
-Every route goes through rate limiting (NFR-04).
+Every route goes through rate limiting (NFR-04). Errors are JSON `{ error: <code> }`; the codes are listed in `packages/shared/src/api.ts`.
+
+| Status | Codes                                                                                                      |
+| ------ | ---------------------------------------------------------------------------------------------------------- |
+| 400    | `invalid_body`, `invalid_date`, `date_out_of_range`, `before_launch`, `invalid_session`, `unknown_country` |
+| 401    | `invalid_token`, `token_expired` (the token's date is no longer live, NFR-03)                              |
+| 409    | `already_guessed`, `game_over`, `already_finished`                                                         |
+| 429    | `rate_limited`, with `Retry-After: 60`                                                                     |
+
+If D1 is unavailable during `/api/finish`, the game still ends: the answer is returned with `globalStats: null` (NFR-07).
 
 ### Game token
 
 The token prevents faked stats without writing to the database on every guess.
 
-- Format: `base64url(payload).base64url(HMAC-SHA256(TOKEN_KEY, payload))`, with `payload = { v, date, sid, guesses: [iso3...], won, startedAt }`.
+- Format: `base64url(payload).base64url(HMAC-SHA256(TOKEN_KEY, payload))`, with `payload = { v, date, sid, guesses: [iso3...], startedAt }`. The win is not stored: the server recomputes it from `guesses` and the answer.
 - `TOKEN_KEY` is a secret separate from `SECRET`, stored with `wrangler secret`.
 - On each `/guess`, the Worker checks the signature, rejects duplicates, appends the guess and returns a new token. The client can read the token, but it holds only the player's own guesses, never the answer.
 - `/finish` works out `won` (is the answer in `guesses`?), the guess count, the first guess and the duration from the token. The client declares nothing.
@@ -282,7 +291,7 @@ The token prevents faked stats without writing to the database on every guess.
 
 - The list of playable countries (about 195 ISO 3166-1 alpha-3 codes) is shuffled once per cycle with a deterministic shuffle seeded with `HMAC-SHA256(SECRET, "cycle-" + n)`.
 - Country of the day = `list[dayNumber % 195]` in cycle `n = floor(dayNumber / 195)`: no country repeats before the end of the cycle.
-- `dayNumber` = number of days between the local date received and the launch date (day #1).
+- `dayNumber` = number of days between the local date received and the launch date, plus one (the launch date is day #1). Dates before launch are rejected (400). The launch date is the `LAUNCH_DATE` variable in `wrangler.jsonc`.
 - `SECRET` is stored with `wrangler secret`, never in the repo.
 
 ### Local dates

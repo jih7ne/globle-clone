@@ -2,7 +2,7 @@
 
 A daily geography game: find the mystery country, guided only by how far each guess is from it. Inspired by [Globle](https://globle-game.com), with its own design.
 
-> Status: in development (week 1 of 6). See the [specification](docs/SPECIFICATION.md).
+> Status: in development (week 2 of 6). See the [specification](docs/SPECIFICATION.md).
 
 ## Stack
 
@@ -18,9 +18,25 @@ Requires Node 24.
 
 ```sh
 npm install
+
+# First time only: local secrets and the local D1 database
+cp apps/api/.dev.vars.example apps/api/.dev.vars
+cd apps/api && npx wrangler d1 migrations apply getting-warmer --local && cd ../..
+
 npm run dev:api   # Worker on http://localhost:8787
 npm run dev:web   # Front end on http://localhost:5173, /api proxied to the Worker
 ```
+
+## API
+
+| Route                  | Purpose                                                                         |
+| ---------------------- | ------------------------------------------------------------------------------- |
+| `POST /api/start`      | Starts the day's game; returns the day number and a signed game token           |
+| `POST /api/guess`      | Returns the distance and band of a guess, and a new token                       |
+| `POST /api/finish`     | Ends the game (win or give up), records it, returns the answer and global stats |
+| `GET /api/stats?date=` | Global stats for a date, cached 5 minutes                                       |
+
+The answer is never sent before a win or give-up, and results are read from the signed token rather than trusted from the client. See section 9 of the [specification](docs/SPECIFICATION.md) for the threat model.
 
 ## Scripts
 
