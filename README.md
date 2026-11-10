@@ -32,6 +32,21 @@ npm run dev:web   # Front end on http://localhost:5173, /api proxied to the Work
 | `npm run typecheck`     | TypeScript in every workspace       |
 | `npm run format`        | Prettier                            |
 | `npm run build`         | Builds the front end                |
+| `npm run build:geo`     | Rebuilds the country data (below)   |
+
+## Country data
+
+`npm run build:geo` (in `tools/geo`) downloads [Natural Earth](https://www.naturalearthdata.com) 1:10m country borders, checks their SHA-256, and writes three committed files:
+
+| File                                      | Contents                                                     | Used by                                |
+| ----------------------------------------- | ------------------------------------------------------------ | -------------------------------------- |
+| `packages/shared/src/data/countries.json` | 195 countries: English and French names, aliases, population | Front end and API                      |
+| `apps/api/src/data/distances.json`        | 195 × 195 border-to-border distances in km                   | API only, never shipped to the browser |
+| `apps/web/public/geo/countries.geojson`   | Simplified shapes for the globe (under 1 MB)                 | Front end                              |
+
+Playable countries are the 193 UN member states plus the Holy See and Palestine. Distances are the great-circle distance between the nearest border points, computed on unsimplified borders (so small islands count) with a 3D k-d tree. Data tests in `tools/geo/src/data.test.ts` check known neighbours, enclaves, straits, the antimeridian and island countries.
+
+Made with Natural Earth. Free vector and raster map data @ naturalearthdata.com.
 
 ## Licence
 

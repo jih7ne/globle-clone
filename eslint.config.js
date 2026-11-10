@@ -18,4 +18,9 @@ export default tseslint.config(
     },
   },
   { files: ['*.{js,ts}'], languageOptions: { globals: globals.node } },
+  {
+    // Offline build tooling and tests index typed arrays in tight loops; app code stays strict.
+    files: ['tools/**/*.ts', '**/*.test.{ts,tsx}'],
+    rules: { '@typescript-eslint/no-non-null-assertion': 'off' },
+  },
 );

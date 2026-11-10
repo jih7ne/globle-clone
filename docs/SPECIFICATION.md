@@ -214,20 +214,20 @@ The browser sends only guesses and receives only distances and a signed game tok
 
 Everything fits in Cloudflare's free tier (front end, API, database) plus GitHub, with no credit card.
 
-| Layer                        | Choice                                         | Reason                                                              |
-| ---------------------------- | ---------------------------------------------- | ------------------------------------------------------------------- |
-| Front end                    | React 18 + Vite + TypeScript                   | Fast builds, industry standard                                      |
-| 3D globe                     | react-globe.gl (three.js)                      | Coloured GeoJSON polygons, built-in rotation, zoom and camera moves |
-| Styling                      | Tailwind CSS                                   | Easy dark mode and responsive layout                                |
-| Geo data                     | Natural Earth 1:50m, simplified with mapshaper | Public domain, small file                                           |
-| Distance computation (build) | Node script + turf.js                          | Precomputed border-to-border matrix                                 |
-| API                          | Cloudflare Workers + Hono                      | Serverless, secret key on the server                                |
-| Rate limiting                | Workers Rate Limiting binding                  | Counter managed by Cloudflare, nothing to store                     |
-| Database                     | Cloudflare D1 (SQLite)                         | Global stats                                                        |
-| Front-end hosting            | Cloudflare Pages                               | Public `*.pages.dev` URL, automatic deploys from GitHub             |
-| CI/CD                        | GitHub Actions                                 | Free for a public repo                                              |
-| Tests                        | Vitest, fast-check, Playwright, k6             | See section 10                                                      |
-| Quality                      | ESLint, Prettier, Codecov                      | README badges                                                       |
+| Layer                        | Choice                                                               | Reason                                                                     |
+| ---------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| Front end                    | React 18 + Vite + TypeScript                                         | Fast builds, industry standard                                             |
+| 3D globe                     | react-globe.gl (three.js)                                            | Coloured GeoJSON polygons, built-in rotation, zoom and camera moves        |
+| Styling                      | Tailwind CSS                                                         | Easy dark mode and responsive layout                                       |
+| Geo data                     | Natural Earth 1:10m (v5.1.2); globe shapes simplified with mapshaper | Public domain; includes the smallest countries (Vatican City, Nauru)       |
+| Distance computation (build) | Node script with a 3D k-d tree, on unsimplified borders              | Precomputed border-to-border matrix; exact to about 5 km, built in seconds |
+| API                          | Cloudflare Workers + Hono                                            | Serverless, secret key on the server                                       |
+| Rate limiting                | Workers Rate Limiting binding                                        | Counter managed by Cloudflare, nothing to store                            |
+| Database                     | Cloudflare D1 (SQLite)                                               | Global stats                                                               |
+| Front-end hosting            | Cloudflare Pages                                                     | Public `*.pages.dev` URL, automatic deploys from GitHub                    |
+| CI/CD                        | GitHub Actions                                                       | Free for a public repo                                                     |
+| Tests                        | Vitest, fast-check, Playwright, k6                                   | See section 10                                                             |
+| Quality                      | ESLint, Prettier, Codecov                                            | README badges                                                              |
 
 ### Free quotas to respect
 

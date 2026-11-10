@@ -1,0 +1,51 @@
+/**
+ * Hand-curated display names and aliases. Natural Earth provides the base names;
+ * these entries fix abbreviations and add the names players actually type.
+ */
+export const NAME_OVERRIDES: Record<string, { en?: string; fr?: string }> = {
+  BHS: { en: 'Bahamas' },
+  CHN: { en: 'China', fr: 'Chine' },
+  CIV: { en: "Côte d'Ivoire" },
+  COD: { en: 'Democratic Republic of the Congo' },
+  COG: { en: 'Republic of the Congo' },
+  CPV: { en: 'Cabo Verde' },
+  CZE: { en: 'Czechia' },
+  FSM: { en: 'Micronesia', fr: 'Micronésie' },
+  GMB: { en: 'Gambia' },
+  SWZ: { en: 'Eswatini' },
+  TLS: { en: 'Timor-Leste' },
+  USA: { en: 'United States' },
+  VAT: { en: 'Vatican City' },
+};
+
+export const EXTRA_ALIASES: Record<string, { en?: string[]; fr?: string[] }> = {
+  ARE: { en: ['UAE', 'Emirates'], fr: ['EAU'] },
+  ATG: { en: ['Antigua'] },
+  BIH: { en: ['Bosnia'], fr: ['Bosnie'] },
+  BLR: { fr: ['Bélarus'] },
+  CAF: { en: ['CAR'], fr: ['Centrafrique'] },
+  CIV: { en: ['Ivory Coast'] },
+  COD: { en: ['DRC', 'DR Congo', 'Congo-Kinshasa', 'Zaire'], fr: ['RDC', 'Congo-Kinshasa'] },
+  COG: { en: ['Congo', 'Congo-Brazzaville'], fr: ['Congo', 'Congo-Brazzaville'] },
+  CPV: { en: ['Cape Verde'] },
+  CZE: { en: ['Czech Republic'], fr: ['République tchèque'] },
+  FSM: { en: ['Federated States of Micronesia'] },
+  GBR: { en: ['UK', 'Great Britain', 'Britain'], fr: ['Grande-Bretagne', 'Angleterre'] },
+  KNA: { en: ['Saint Kitts', 'Saint Christopher and Nevis'] },
+  KOR: { en: ['Republic of Korea'], fr: ['Corée'] },
+  LAO: { en: ['Lao PDR', "Lao People's Democratic Republic"] },
+  MKD: { en: ['Macedonia'], fr: ['Macédoine'] },
+  MMR: { en: ['Burma'], fr: ['Myanmar'] },
+  NLD: { en: ['Holland'], fr: ['Hollande'] },
+  PNG: { en: ['PNG'] },
+  PRK: { en: ['DPRK'] },
+  RUS: { en: ['Russian Federation'] },
+  STP: { en: ['Sao Tome'] },
+  SWZ: { en: ['Swaziland'], fr: ['Swaziland'] },
+  TLS: { en: ['East Timor'], fr: ['Timor-Leste'] },
+  TTO: { en: ['Trinidad'] },
+  TUR: { en: ['Türkiye'], fr: ['Türkiye'] },
+  USA: { en: ['USA', 'US', 'America', 'United States of America'], fr: ["États-Unis d'Amérique"] },
+  VAT: { en: ['Holy See', 'Vatican'], fr: ['Saint-Siège', 'Vatican'] },
+  VCT: { en: ['Saint Vincent'] },
+};
