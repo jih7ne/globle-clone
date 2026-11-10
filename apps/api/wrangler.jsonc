@@ -1,0 +1,8 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "getting-warmer-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-01",
+  "observability": { "enabled": true },
+  // D1 database, rate limiting binding and secrets (SECRET, TOKEN_KEY) are added in week 2.
+}

@@ -1,0 +1,11 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-burning: #c62828;
+  --color-hot: #ef6c00;
+  --color-warm: #f9a825;
+  --color-cool: #4fa3d9;
+  --color-freezing: #dceef8;
+  --color-paper: #f7f3ea;
+  --color-ink: #1f2933;
+}
