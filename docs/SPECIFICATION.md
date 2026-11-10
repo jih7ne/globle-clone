@@ -342,7 +342,7 @@ The test pyramid targets the real risks of this kind of game: dates, time zones,
 3. API tests on Miniflare.
 4. A Cloudflare Pages preview deployment per pull request.
 5. E2E, security and accessibility tests on that preview.
-6. Merge allowed only if everything is green; production deploy on `main`.
+6. Merge allowed only if everything is green; production deploy on `master`.
 
 ### QA deliverables visible in the repo
 
@@ -384,7 +384,7 @@ The public MVP is reachable in 6 part-time weeks, with the LinkedIn post after o
 - [ ] The monthly cost is €0.
 - [ ] No test reveals the answer before a win (NFR-01).
 - [ ] No call to `/api/finish` without a valid token is counted in the stats (NFR-14).
-- [ ] CI is green on `main`, coverage at least 85%.
+- [ ] CI is green on `master`, coverage at least 85%.
 - [ ] Lighthouse mobile at least 85, zero critical axe-core violations.
 - [ ] 10 beta testers have played 3 days in a row with no blocking bug.
 
