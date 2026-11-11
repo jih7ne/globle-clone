@@ -2,7 +2,11 @@
 
 A daily geography game: find the mystery country, guided only by how far each guess is from it. Inspired by [Globle](https://globle-game.com), with its own design.
 
-> Status: in development (week 2 of 6). See the [specification](docs/SPECIFICATION.md).
+[![CI](https://github.com/jih7ne/globle-clone/actions/workflows/ci.yml/badge.svg)](https://github.com/jih7ne/globle-clone/actions/workflows/ci.yml)
+
+> Status: in development (week 6 of 6), not deployed yet. See the [specification](docs/SPECIFICATION.md) and the [test strategy](TEST_STRATEGY.md).
+
+English and French. No account, no cookies, no tracking.
 
 ## Stack
 
@@ -10,7 +14,7 @@ A daily geography game: find the mystery country, guided only by how far each gu
 - **API:** Cloudflare Workers and Hono (`apps/api`)
 - **Shared logic:** distance bands, name matching (`packages/shared`)
 - **Data:** Cloudflare D1, Natural Earth map data
-- **Hosting:** Cloudflare Pages, free tier
+- **Hosting:** Cloudflare Pages and Workers, free tier. Pages forwards `/api/*` to the Worker through a service binding (`apps/web/functions`), so the site and the API share one origin.
 
 ## Getting started
 
@@ -40,15 +44,42 @@ The answer is never sent before a win or give-up, and results are read from the 
 
 ## Scripts
 
-| Command                 | What it does                        |
-| ----------------------- | ----------------------------------- |
-| `npm test`              | Runs every test with Vitest         |
-| `npm run test:coverage` | Tests with coverage (85% threshold) |
-| `npm run lint`          | ESLint                              |
-| `npm run typecheck`     | TypeScript in every workspace       |
-| `npm run format`        | Prettier                            |
-| `npm run build`         | Builds the front end                |
-| `npm run build:geo`     | Rebuilds the country data (below)   |
+| Command                 | What it does                                                    |
+| ----------------------- | --------------------------------------------------------------- |
+| `npm test`              | Runs every test with Vitest                                     |
+| `npm run test:e2e`      | Playwright: builds the site, starts a local Worker and database |
+| `npm run test:coverage` | Tests with coverage (85% threshold)                             |
+| `npm run lint`          | ESLint                                                          |
+| `npm run typecheck`     | TypeScript in every workspace                                   |
+| `npm run format`        | Prettier                                                        |
+| `npm run build`         | Builds the front end                                            |
+| `npm run build:geo`     | Rebuilds the country data (below)                               |
+
+## Deployment
+
+CI (`.github/workflows/ci.yml`) deploys after the checks and E2E tests pass: database migrations and the Worker on `master`, the site on `master` (production) and on every pull request (a preview URL). The deploy job is skipped until the Cloudflare secrets below exist.
+
+One-time setup, with a free Cloudflare account:
+
+```sh
+npx wrangler login
+
+# 1. The database: copy the printed database_id into apps/api/wrangler.jsonc
+npx wrangler d1 create getting-warmer
+
+# 2. Secrets for the Worker (long random strings, kept private)
+cd apps/api
+npx wrangler secret put SECRET      # decides the daily order: changing it changes every future answer
+npx wrangler secret put TOKEN_KEY   # signs game tokens
+npx wrangler d1 migrations apply getting-warmer --remote
+npx wrangler deploy
+cd ../..
+
+# 3. The Pages project
+npx wrangler pages project create getting-warmer --production-branch master
+```
+
+Then add two secrets in the GitHub repository settings: `CLOUDFLARE_API_TOKEN` (a token with edit rights on Workers, D1 and Pages) and `CLOUDFLARE_ACCOUNT_ID`. Day #1 is `LAUNCH_DATE` in `apps/api/wrangler.jsonc`.
 
 ## Country data
 

@@ -1,0 +1,9 @@
+// Cloudflare Pages project for the front end (`wrangler pages deploy`, see the README).
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "getting-warmer",
+  "pages_build_output_dir": "dist",
+  "compatibility_date": "2026-11-01",
+  // functions/api/[[path]].ts forwards /api/* to the Worker (apps/api).
+  "services": [{ "binding": "API", "service": "getting-warmer-api" }],
+}
