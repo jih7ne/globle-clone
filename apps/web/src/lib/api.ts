@@ -1,5 +1,6 @@
 import type {
   ApiErrorCode,
+  FeedbackRequest,
   FinishResponse,
   GuessResponse,
   StartRequest,
@@ -43,4 +44,5 @@ export const api = {
   start: (req: StartRequest) => post<StartResponse>('start', req),
   guess: (token: string, iso3: string) => post<GuessResponse>('guess', { token, iso3 }),
   finish: (token: string) => post<FinishResponse>('finish', { token }),
+  feedback: (req: FeedbackRequest) => post<{ ok: true }>('feedback', req),
 };

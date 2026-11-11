@@ -2,7 +2,7 @@
  * API integration tests: the real Hono app against a real local D1 database (Miniflare),
  * with an injectable clock and a fake rate limiter.
  */
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { Miniflare } from 'miniflare';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -84,10 +84,12 @@ beforeAll(async () => {
     d1Databases: ['DB'],
   });
   db = (await mf.getD1Database('DB')) as unknown as D1Database;
-  const sql = readFileSync(join(import.meta.dirname, '../migrations/0001_results.sql'), 'utf8')
-    .replace(/--.*$/gm, '')
-    .trim();
-  await db.prepare(sql).run();
+  // Every migration, in order, like `wrangler d1 migrations apply` (one statement each).
+  const dir = join(import.meta.dirname, '../migrations');
+  for (const file of readdirSync(dir).sort()) {
+    const sql = readFileSync(join(dir, file), 'utf8').replace(/--.*$/gm, '').trim();
+    await db.prepare(sql).run();
+  }
 });
 
 afterAll(async () => {
@@ -96,6 +98,7 @@ afterAll(async () => {
 
 beforeEach(async () => {
   await db.prepare('DELETE FROM results').run();
+  await db.prepare('DELETE FROM feedback').run();
   nowMs = Date.parse(`${TODAY}T12:00:00Z`);
   allowRequests = true;
   limiterKeys = [];
@@ -323,5 +326,62 @@ describe('other routes', () => {
     const res = await app.request('/api/nope', {}, env());
     expect(res.status).toBe(404);
     expect(await res.json()).toEqual({ error: 'not_found' });
+  });
+});
+
+describe('POST /api/feedback', () => {
+  const rows = async () =>
+    (await db.prepare('SELECT * FROM feedback').all<Record<string, unknown>>()).results;
+
+  it('stores an answer without anything identifying', async () => {
+    const res = await post('/api/feedback', {
+      device: 'mobile',
+      rating: 4,
+      again: 'yes',
+      problems: '  The globe was slow  ',
+      ideas: 'A hard mode',
+      setup: 'Pixel 7, Chrome',
+      lang: 'fr',
+    });
+    expect(res.status).toBe(201);
+    const [row] = await rows();
+    expect(row).toMatchObject({
+      device: 'mobile',
+      rating: 4,
+      again: 'yes',
+      problems: 'The globe was slow',
+      ideas: 'A hard mode',
+      setup: 'Pixel 7, Chrome',
+      lang: 'fr',
+    });
+    expect(JSON.stringify(row)).not.toContain('203.0.113.7');
+  });
+
+  it('accepts the two required answers alone', async () => {
+    expect((await post('/api/feedback', { device: 'both', rating: 1 })).status).toBe(201);
+    expect(await rows()).toHaveLength(1);
+  });
+
+  it('rejects a missing device or an out-of-range rating', async () => {
+    for (const body of [
+      { rating: 3 },
+      { device: 'tv', rating: 3 },
+      { device: 'desktop', rating: 6 },
+      { device: 'desktop', rating: 2.5 },
+      'not json',
+    ]) {
+      expect((await post('/api/feedback', body)).status).toBe(400);
+    }
+    expect(await rows()).toHaveLength(0);
+  });
+
+  it('answers bots that fill the hidden field as if it worked, and stores nothing', async () => {
+    const res = await post('/api/feedback', {
+      device: 'desktop',
+      rating: 5,
+      website: 'http://spam',
+    });
+    expect(res.status).toBe(201);
+    expect(await rows()).toHaveLength(0);
   });
 });

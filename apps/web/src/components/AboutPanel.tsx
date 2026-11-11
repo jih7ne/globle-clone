@@ -14,6 +14,12 @@ export function AboutPanel({ onClose }: { onClose: () => void }) {
           </section>
         ))}
         <a
+          href="/feedback"
+          className="headline border-b-2 border-ink bg-burning p-5 text-3xl text-paper transition-colors hover:bg-ink"
+        >
+          {en.aboutFeedback} →
+        </a>
+        <a
           href={en.repoUrl}
           target="_blank"
           rel="noreferrer"

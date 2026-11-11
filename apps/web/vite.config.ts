@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
@@ -11,4 +12,13 @@ export default defineConfig({
   preview: { proxy },
   // The map worker (lib/baseLayer.worker.ts) uses top-level await and dynamic imports.
   worker: { format: 'es' },
+  // Two pages: the game, and the beta feedback form served at /feedback.
+  build: {
+    rollupOptions: {
+      input: {
+        main: fileURLToPath(new URL('index.html', import.meta.url)),
+        feedback: fileURLToPath(new URL('feedback.html', import.meta.url)),
+      },
+    },
+  },
 });

@@ -9,6 +9,7 @@ import {
 } from '@gw/shared';
 import distances from './data/distances.json' with { type: 'json' };
 import { createDailyPicker } from './daily';
+import { parseFeedback } from './feedback';
 import { dayNumber, isLiveDate, parseDate } from './dates';
 import { aggregate, isSuspect, type ResultRow } from './stats';
 import { signToken, verifyToken, type GamePayload } from './token';
@@ -208,6 +209,21 @@ export function createApp({ now = Date.now }: AppOptions = {}) {
     });
     if (cache) c.executionCtx.waitUntil(cache.put(cacheKey, res.clone()));
     return res;
+  });
+
+  // Beta feedback form. Rate limited like every route; nothing identifying is stored.
+  app.post('/api/feedback', async (c) => {
+    const body = await readJson(c);
+    const row = body && parseFeedback(body);
+    if (!row) return fail(c, 'invalid_body', 400);
+    if (row !== 'spam') {
+      await c.env.DB.prepare(
+        'INSERT INTO feedback (device, rating, again, problems, ideas, setup, lang) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      )
+        .bind(row.device, row.rating, row.again, row.problems, row.ideas, row.setup, row.lang)
+        .run();
+    }
+    return c.json({ ok: true }, 201);
   });
 
   app.notFound((c) => fail(c, 'not_found', 404));

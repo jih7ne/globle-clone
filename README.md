@@ -33,12 +33,17 @@ npm run dev:api   # Worker on http://localhost:8787
 npm run dev:web   # Front end on http://localhost:5173, /api proxied to the Worker
 ```
 
+## Beta feedback
+
+Testers fill in a six-question form at [/feedback](https://getting-warmer.pages.dev/feedback) (also linked from About). Answers go to the `feedback` table in D1 through `POST /api/feedback`, anonymously: no IP, no session, no contact details. A hidden field catches bots. Read them with `npm run feedback`.
+
 ## API
 
 | Route                  | Purpose                                                                         |
 | ---------------------- | ------------------------------------------------------------------------------- |
 | `POST /api/start`      | Starts the day's game; returns the day number and a signed game token           |
 | `POST /api/guess`      | Returns the distance and band of a guess, and a new token                       |
+| `POST /api/feedback`   | Stores one anonymous answer to the beta feedback form                           |
 | `POST /api/finish`     | Ends the game (win or give up), records it, returns the answer and global stats |
 | `GET /api/stats?date=` | Global stats for a date, cached 5 minutes                                       |
 
@@ -56,6 +61,7 @@ The answer is never sent before a win or give-up, and results are read from the 
 | `npm run format`        | Prettier                                                        |
 | `npm run build`         | Builds the front end                                            |
 | `npm run build:geo`     | Rebuilds the country data (below)                               |
+| `npm run feedback`      | Prints the beta feedback answers from the live database         |
 
 ## Deployment
 

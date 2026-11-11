@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.test.json"
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.test.json",
+    "feedback": "wrangler d1 execute getting-warmer --remote --command \"SELECT created_at, device, rating, again, problems, ideas, setup, lang FROM feedback ORDER BY id DESC\""
   },
   "dependencies": {
     "@gw/shared": "*",

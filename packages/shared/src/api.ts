@@ -70,3 +70,18 @@ export type ApiErrorCode =
 export interface ApiError {
   error: ApiErrorCode;
 }
+
+/** POST /api/feedback: the beta feedback form (all free text is optional). */
+export interface FeedbackRequest {
+  device: 'mobile' | 'desktop' | 'both';
+  /** 1 (freezing) to 5 (burning). */
+  rating: number;
+  again?: 'yes' | 'maybe' | 'no';
+  problems?: string;
+  ideas?: string;
+  /** Phone or browser, to reproduce bugs. */
+  setup?: string;
+  lang?: 'en' | 'fr';
+  /** Honeypot: hidden from people, filled in by bots. */
+  website?: string;
+}

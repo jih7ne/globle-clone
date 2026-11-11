@@ -21,7 +21,8 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "build:geo": "npm run build:data -w @gw/geo",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "feedback": "npm run feedback -w @gw/api"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",
