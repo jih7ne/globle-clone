@@ -35,6 +35,14 @@ export function trendOf(guesses: readonly Guess[], i: number): Trend {
   return guess.distanceKm < best ? 'warmer' : guess.distanceKm > best ? 'colder' : 'same';
 }
 
+/**
+ * A wrong guess at 0 km shares a border with the answer. Distances are whole km between
+ * the nearest border points: narrow straits stay above zero (Singapore–Malaysia is 2 km).
+ */
+export function isAdjacent(g: Guess): boolean {
+  return g.distanceKm === 0 && g.band !== 'found';
+}
+
 /** The closest guess so far, or undefined before the first guess. */
 export function bestGuess(guesses: readonly Guess[]): Guess | undefined {
   return guesses.reduce<Guess | undefined>(

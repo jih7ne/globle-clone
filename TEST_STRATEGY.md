@@ -34,41 +34,41 @@ E2E tests use a unique `CF-Connecting-IP` per test so the rate limiter does not 
 
 ## Requirements traceability
 
-| Requirement                            | Tests                                                                                        |
-| -------------------------------------- | -------------------------------------------------------------------------------------------- |
-| FR-01 Daily country, same for all      | `daily.test.ts` (shuffle without repeats per cycle, stable per day), `dates.test.ts`         |
-| FR-02 Autocomplete, case, accents      | `match.test.ts`, `names.test.ts`                                                             |
-| FR-03 Alternative names                | `match.test.ts` (property: every name and alias matches its country); E2E French browser     |
-| FR-04 Unknown / repeated country       | `app.test.ts` (400, 409); `game.spec.ts`                                                     |
-| FR-05 Border-to-border distance        | `distance.test.ts`, `data.test.ts`, `app.test.ts`                                            |
-| FR-06 Colour by distance               | `bands.test.ts` (bounds and continuous scale)                                                |
-| FR-07 Two list views                   | Partly: used in E2E, no dedicated assertion yet                                              |
-| FR-08 Rotate and zoom                  | Manual check only                                                                            |
-| FR-09 Win postcard                     | `game.spec.ts`                                                                               |
-| FR-10 Give up                          | `app.test.ts`; `game.spec.ts`; `anti-cheat.spec.ts`                                          |
-| FR-11 Resume after reload              | `game.spec.ts`                                                                               |
-| FR-12 Countdown                        | Manual check only                                                                            |
-| FR-13 English / French                 | `i18n.test.ts` (same keys, everything translated), `share.test.ts`; `game.spec.ts` (2)       |
-| FR-14 Dark mode                        | Not built                                                                                    |
-| FR-15 How to play on first visit       | `game.spec.ts`                                                                               |
-| FR-16 Personal stats                   | `stats.test.ts` (streaks, distribution, missed days); `game.spec.ts`                         |
-| FR-17 Share                            | `share.test.ts` (exact format, no country names); `game.spec.ts`                             |
-| FR-18 Global stats                     | `stats.test.ts` (API), `app.test.ts`                                                         |
-| FR-19 Export / import stats            | Not built                                                                                    |
-| FR-20 About page                       | Covered by the axe run on every screen                                                       |
-| FR-21 Gauge and trend message          | Partly: E2E sees the messages; the trend logic in `lib/game.ts` has no unit test yet         |
-| FR-22 "Did you mean?"                  | `match.test.ts` (thresholds, ties, swapped letters); `game.spec.ts`                          |
-| NFR-01 No answer leak                  | `app.test.ts` (token content); `anti-cheat.spec.ts` (every response before give-up)          |
-| NFR-02 Secret daily pick               | `daily.test.ts` (order changes with the secret and the cycle)                                |
-| NFR-03 Date window UTC−12 … UTC+14     | `dates.test.ts`, `app.test.ts`                                                               |
-| NFR-04 Rate limit                      | `app.test.ts` (fake limiter: key is the IP, 429 with Retry-After)                            |
-| NFR-05 API p95 < 200 ms                | Not measured yet (k6 planned on the deployed API)                                            |
-| NFR-06 Lighthouse ≥ 85, GeoJSON < 1 MB | GeoJSON size in `data.test.ts`; Lighthouse run by hand, see below                            |
-| NFR-07 API down                        | `app.test.ts` (D1 unavailable); offline banner checked by hand                               |
-| NFR-09 Accessibility                   | `a11y.spec.ts` (axe, every screen, desktop and mobile); keyboard-only `game.spec.ts`         |
-| NFR-10 Browsers, 360 px                | Chromium desktop and Pixel 7 only                                                            |
-| NFR-12 Coverage ≥ 85%, CI blocks       | Coverage threshold in `vitest.config.ts`; CI on every push and pull request                  |
-| NFR-14 Stats integrity                 | `app.test.ts` (client claims ignored, one finish per session, suspect flag), `token.test.ts` |
+| Requirement                            | Tests                                                                                             |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| FR-01 Daily country, same for all      | `daily.test.ts` (shuffle without repeats per cycle, stable per day), `dates.test.ts`              |
+| FR-02 Autocomplete, case, accents      | `match.test.ts`, `names.test.ts`                                                                  |
+| FR-03 Alternative names                | `match.test.ts` (property: every name and alias matches its country); E2E French browser          |
+| FR-04 Unknown / repeated country       | `app.test.ts` (400, 409); `game.spec.ts`                                                          |
+| FR-05 Border-to-border distance        | `distance.test.ts`, `data.test.ts`, `app.test.ts`                                                 |
+| FR-06 Colour by distance               | `bands.test.ts` (bounds and continuous scale)                                                     |
+| FR-07 Two list views                   | Partly: used in E2E, no dedicated assertion yet                                                   |
+| FR-08 Rotate and zoom                  | Manual check only                                                                                 |
+| FR-09 Win postcard                     | `game.spec.ts`                                                                                    |
+| FR-10 Give up                          | `app.test.ts`; `game.spec.ts`; `anti-cheat.spec.ts`                                               |
+| FR-11 Resume after reload              | `game.spec.ts`                                                                                    |
+| FR-12 Countdown                        | Manual check only                                                                                 |
+| FR-13 English / French                 | `i18n.test.ts` (same keys, everything translated), `share.test.ts`; `game.spec.ts` (2)            |
+| FR-14 Dark mode                        | Not built                                                                                         |
+| FR-15 How to play on first visit       | `game.spec.ts`                                                                                    |
+| FR-16 Personal stats                   | `stats.test.ts` (streaks, distribution, missed days); `game.spec.ts`                              |
+| FR-17 Share                            | `share.test.ts` (exact format, no country names); `game.spec.ts`                                  |
+| FR-18 Global stats                     | `stats.test.ts` (API), `app.test.ts`                                                              |
+| FR-19 Export / import stats            | Not built                                                                                         |
+| FR-20 About page                       | Covered by the axe run on every screen                                                            |
+| FR-21 Gauge and trend message          | `game.test.ts` (shared border); E2E "Next door." for a neighbour; trend logic not unit-tested yet |
+| FR-22 "Did you mean?"                  | `match.test.ts` (thresholds, ties, swapped letters); `game.spec.ts`                               |
+| NFR-01 No answer leak                  | `app.test.ts` (token content); `anti-cheat.spec.ts` (every response before give-up)               |
+| NFR-02 Secret daily pick               | `daily.test.ts` (order changes with the secret and the cycle)                                     |
+| NFR-03 Date window UTC−12 … UTC+14     | `dates.test.ts`, `app.test.ts`                                                                    |
+| NFR-04 Rate limit                      | `app.test.ts` (fake limiter: key is the IP, 429 with Retry-After)                                 |
+| NFR-05 API p95 < 200 ms                | Not measured yet (k6 planned on the deployed API)                                                 |
+| NFR-06 Lighthouse ≥ 85, GeoJSON < 1 MB | GeoJSON size in `data.test.ts`; Lighthouse run by hand, see below                                 |
+| NFR-07 API down                        | `app.test.ts` (D1 unavailable); offline banner checked by hand                                    |
+| NFR-09 Accessibility                   | `a11y.spec.ts` (axe, every screen, desktop and mobile); keyboard-only `game.spec.ts`              |
+| NFR-10 Browsers, 360 px                | Chromium desktop and Pixel 7 only                                                                 |
+| NFR-12 Coverage ≥ 85%, CI blocks       | Coverage threshold in `vitest.config.ts`; CI on every push and pull request                       |
+| NFR-14 Stats integrity                 | `app.test.ts` (client claims ignored, one finish per session, suspect flag), `token.test.ts`      |
 
 ## Not covered yet
 
@@ -88,6 +88,8 @@ Kept as raw material for the write-up.
 - **Morocco cut in two:** Western Sahara was a separate shape, leaving a hole (spotted in review). Data tests now check Morocco–Mauritania at 0 km and a point inside the merged shape.
 - **French guess list not found by E2E:** the region was located by the English word "guess"; the French run caught it.
 - **No land on the live site:** the map worker started listening only after loading its code, so on a real network the page's message arrived first and was silently dropped: the globe stayed an empty ocean. Every local test passed because the code loaded instantly. Now the worker listens immediately, the page falls back to building the map itself after 20 s, and an E2E test delays the worker's code and checks the land is drawn by the worker.
+- **Globe hidden behind the panel on phones:** the mobile panel was laid over the globe, covering its centre. Reported by the owner. The panel now sits below the globe; an E2E test on the phone project checks the globe box ends where the panel starts (fails on the old layout).
+- **Brittle row lookup in E2E:** the helper matched a country name in the row's raw text with no letter after it; "Borders it" made the text "ArgentinaBorders it". It now matches the name's own element exactly.
 - **Language button failing axe:** visible "FR" but accessible name "Français" (`label-content-name-mismatch`).
 
 ## Running the tests

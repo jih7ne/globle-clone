@@ -11,7 +11,7 @@ import { Thermometer } from './components/Thermometer';
 import { useGame, type GameError } from './hooks/useGame';
 import { useT } from './i18n/context';
 import type { Strings } from './i18n/en';
-import { bestGuess, trendOf, type Trend } from './lib/game';
+import { bestGuess, isAdjacent, trendOf, type Trend } from './lib/game';
 import { loadGeo, type GeoData } from './lib/geo';
 import { shareText } from './lib/share';
 import { computeStats } from './lib/stats';
@@ -49,21 +49,24 @@ const TREND_COLOR: Partial<Record<Trend, string>> = {
 };
 
 /** Big status line under the masthead: the intro, then how the last guess compares (FR-21). */
-function Status({ trend }: { trend: Trend | null }) {
+/** `adjacent`: name of the last guess when it borders the answer, which beats any trend. */
+function Status({ trend, adjacent }: { trend: Trend | null; adjacent: string | null }) {
   const { t: en } = useT();
   // The intro shows straight away, before the API answers: it is the largest text on first
   // paint (Lighthouse LCP). Only trend messages animate in.
-  const headline = trend ? en.trendHeadline[trend] : en.intro;
-  const sub = trend ? en.trendSub[trend] : en.introSub;
+  const headline = adjacent ? en.adjacentHeadline : trend ? en.trendHeadline[trend] : en.intro;
+  const sub = adjacent ? en.adjacentSub(adjacent) : trend ? en.trendSub[trend] : en.introSub;
   return (
     <div aria-live="polite">
       <p
-        key={trend ?? 'intro'}
-        className={`headline text-5xl ${trend ? `slide-in ${TREND_COLOR[trend] ?? ''}` : ''}`}
+        key={adjacent ? `adjacent-${adjacent}` : (trend ?? 'intro')}
+        className={`headline text-[34px] md:text-5xl ${trend ? `slide-in ${adjacent ? 'text-burning' : (TREND_COLOR[trend] ?? '')}` : ''}`}
       >
         {headline}
       </p>
-      {sub && <p className="mt-2 text-[15px] leading-snug text-muted">{sub}</p>}
+      {sub && (
+        <p className="mt-1.5 text-sm leading-snug text-muted md:mt-2 md:text-[15px]">{sub}</p>
+      )}
       {trend && <span className="sr-only">{en.trends[trend]}</span>}
     </div>
   );
@@ -111,7 +114,12 @@ export function App() {
     return m;
   }, [guesses, answer]);
   const labels = useMemo(() => {
-    const m = new Map(guesses.map((g) => [g.code, `${nameOf(g.code)} · ${en.km(g.distanceKm)}`]));
+    const m = new Map(
+      guesses.map((g) => [
+        g.code,
+        `${nameOf(g.code)} · ${isAdjacent(g) ? en.bordersIt : en.km(g.distanceKm)}`,
+      ]),
+    );
     if (answer && !m.has(answer)) m.set(answer, nameOf(answer));
     return m;
   }, [guesses, answer, nameOf, en]);
@@ -173,7 +181,7 @@ export function App() {
     <div className="relative flex h-dvh flex-col overflow-hidden bg-paper text-ink md:flex-row">
       {/* Mobile masthead: title, date and the heat gauge stay visible above the globe. */}
       <header className="z-10 flex flex-col gap-2 border-b-2 border-ink bg-paper px-4 pt-3 pb-3 md:hidden">
-        <h1 className="headline text-4xl">{en.title}.</h1>
+        <h1 className="headline text-[32px]">{en.title}.</h1>
         <div className="flex items-center justify-between gap-3">
           <p className="caption text-muted">{dateLine}</p>
           {nav}
@@ -181,7 +189,7 @@ export function App() {
         <Thermometer best={best} bestName={bestName} compact />
       </header>
 
-      <main className="globe-stage relative min-h-0 flex-1">
+      <main className="globe-stage relative min-h-[26dvh] flex-1">
         {geo && (
           <Suspense fallback={null}>
             <Globe
@@ -202,16 +210,17 @@ export function App() {
         </p>
       </main>
 
-      {/* Left column on desktop, bottom drawer on mobile (section 3). */}
+      {/* Left column on desktop. On mobile a panel under the globe, never over it: the globe
+          keeps its own box and resizes when the panel grows. */}
       <aside
-        className={`absolute inset-x-0 bottom-0 z-20 flex flex-col overflow-y-auto border-t-2 border-ink bg-paper transition-[max-height] duration-300 motion-reduce:transition-none md:static md:order-first md:max-h-none md:w-[460px] md:shrink-0 md:border-t-0 md:border-r-2 ${
-          drawerOpen ? 'max-h-[80dvh]' : 'max-h-[46dvh]'
+        className={`relative z-20 flex shrink-0 flex-col overflow-y-auto border-t-2 border-ink bg-paper transition-[max-height] duration-300 motion-reduce:transition-none md:static md:order-first md:max-h-none md:w-[460px] md:shrink-0 md:border-t-0 md:border-r-2 ${
+          drawerOpen ? 'max-h-[70dvh]' : 'max-h-[50dvh]'
         }`}
       >
         <button
           type="button"
           className="flex h-6 w-full shrink-0 items-center justify-center md:hidden"
-          aria-label={drawerOpen ? 'Collapse panel' : 'Expand panel'}
+          aria-label={drawerOpen ? en.collapsePanel : en.expandPanel}
           aria-expanded={drawerOpen}
           onClick={() => setDrawerOpen((o) => !o)}
         >
@@ -235,7 +244,9 @@ export function App() {
         </div>
 
         <div className="flex flex-col gap-4 px-4 pt-1 pb-4 md:px-6 md:pt-5 md:pb-6">
-          {!over && <Status trend={trend} />}
+          {!over && (
+            <Status trend={trend} adjacent={last && isAdjacent(last) ? nameOf(last.code) : null} />
+          )}
 
           {error && (
             <div

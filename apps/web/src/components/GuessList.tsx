@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { colorForDistance, type NameIndex } from '@gw/shared';
 import { useT } from '../i18n/context';
-import { rankedGuesses, trendOf, type Guess } from '../lib/game';
+import { isAdjacent, rankedGuesses, trendOf, type Guess } from '../lib/game';
 
 type View = 'ranked' | 'chronological';
 
@@ -72,7 +72,7 @@ export function GuessList({ guesses, index }: { guesses: readonly Guess[]; index
                     {en.trendArrow[trend]}
                   </span>
                 )}
-                {en.km(g.distanceKm)}
+                {isAdjacent(g) ? en.bordersIt : en.km(g.distanceKm)}
                 <span className="sr-only">, {en.bands[g.band]}</span>
               </span>
             </li>

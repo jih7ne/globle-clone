@@ -69,6 +69,9 @@ export const fr: Strings = {
     found: '',
   },
   trendArrow: { first: '', warmer: '▲', colder: '▼', same: '=', found: '●' },
+  bordersIt: 'Frontalier',
+  adjacentHeadline: 'Tout près.',
+  adjacentSub: (name: string) => `${name} a une frontière commune avec le pays mystère.`,
   bestSoFar: 'Meilleur essai',
   thermometerLabel: (band: string, km: number | null) =>
     km === null ? 'Aucun essai' : `Meilleur essai : ${band}, ${formatKm(km)}`,

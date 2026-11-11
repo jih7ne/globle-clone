@@ -164,3 +164,37 @@ test.describe('globe', () => {
     expect(fallbacks).toEqual([]);
   });
 });
+
+test.describe('neighbours and mobile layout', () => {
+  test('a country bordering the answer says so', async ({ page, today }) => {
+    const neighbour = today.neighbours[0];
+    test.skip(!neighbour, 'today’s answer has no land neighbour with a one-word name');
+    if (!neighbour) return;
+    await page.goto('/');
+    await startPlaying(page);
+    await guess(page, neighbour.name);
+    await expect(page.getByText('Next door.')).toBeVisible();
+    await expect(
+      page.getByText(`${neighbour.name} shares a border with the mystery country.`),
+    ).toBeVisible();
+    await expect(guessRow(page, neighbour.name)).toContainText('Borders it');
+  });
+
+  test('on a phone the panel sits below the globe, never over it @mobile', async ({
+    page,
+    today,
+    isMobile,
+  }) => {
+    test.skip(!isMobile, 'the desktop layout puts the panel beside the globe');
+    await page.goto('/');
+    await startPlaying(page);
+    await guess(page, today.others[0]?.name ?? 'Brazil');
+    const globe = await page.locator('main').boundingBox();
+    const panel = await page.locator('aside').boundingBox();
+    expect(globe && panel).toBeTruthy();
+    if (!globe || !panel) return;
+    // The globe box keeps real room and ends where the panel starts.
+    expect(globe.height).toBeGreaterThan(page.viewportSize()!.height * 0.25);
+    expect(globe.y + globe.height).toBeLessThanOrEqual(panel.y + 1);
+  });
+});

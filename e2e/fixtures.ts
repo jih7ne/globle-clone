@@ -5,7 +5,7 @@ import { createDailyPicker } from '../apps/api/src/daily';
 import { COUNTRIES } from '../packages/shared/src/countries';
 import { E2E } from './env';
 
-const distances: { codes: string[] } = JSON.parse(
+const distances: { codes: string[]; km: number[][] } = JSON.parse(
   readFileSync(new URL('../apps/api/src/data/distances.json', import.meta.url), 'utf8'),
 );
 const pick = createDailyPicker(E2E.secret, distances.codes);
@@ -14,6 +14,8 @@ const nameOf = (code: string) => COUNTRIES.find((c) => c.code === code)?.name.en
 export interface Today {
   dayNumber: number;
   answer: { code: string; name: string };
+  /** Countries sharing a border with the answer (0 km); none for island countries. */
+  neighbours: { code: string; name: string }[];
   /** Playable countries other than the answer, for wrong guesses. */
   others: { code: string; name: string }[];
 }
@@ -45,7 +47,9 @@ export const test = base.extend<{ today: Today }>({
       // Single-word names avoid ambiguous autocomplete matches.
       .filter((c) => /^[A-Za-z]+$/.test(c.name.en))
       .map((c) => ({ code: c.code, name: c.name.en }));
-    await use({ dayNumber, answer: { code, name: nameOf(code) }, others });
+    const row = distances.km[distances.codes.indexOf(code)] ?? [];
+    const neighbours = others.filter((c) => row[distances.codes.indexOf(c.code)] === 0);
+    await use({ dayNumber, answer: { code, name: nameOf(code) }, neighbours, others });
   },
 });
 
@@ -73,8 +77,9 @@ export function guessRow(page: Page, name: string) {
     page
       .getByRole('region', { name: /guess|essai/ })
       .getByRole('listitem')
-      // Letters on both sides would mean another name (Niger vs Nigeria); digits are the row number.
-      .filter({ hasText: new RegExp(`(?<![A-Za-z])${name}(?![A-Za-z])`) })
+      // The name's own element, matched exactly: Niger is not Nigeria. (A text regex on the
+      // whole row broke once the distance became words: "ArgentinaBorders it".)
+      .filter({ has: page.getByText(name, { exact: true }) })
   );
 }
 

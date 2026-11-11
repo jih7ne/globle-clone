@@ -1,6 +1,6 @@
 import type { Band } from '@gw/shared';
 import { useT } from '../i18n/context';
-import type { Guess } from '../lib/game';
+import { isAdjacent, type Guess } from '../lib/game';
 
 /** Coldest to hottest: the scale fills one segment per band. */
 const LEVELS: { band: Exclude<Band, 'found'>; color: string }[] = [
@@ -45,7 +45,9 @@ export function Thermometer({ best, bestName, compact = false }: Props) {
       <div className="caption flex justify-between gap-3" aria-hidden="true">
         <span className="text-muted">{en.bestSoFar}</span>
         <span className="truncate">
-          {best && bestName ? `${bestName} — ${en.km(best.distanceKm)}` : '—'}
+          {best && bestName
+            ? `${bestName} — ${isAdjacent(best) ? en.bordersIt : en.km(best.distanceKm)}`
+            : '—'}
         </span>
       </div>
       <div className="grid h-4 grid-cols-5 border-2 border-ink" aria-hidden="true">

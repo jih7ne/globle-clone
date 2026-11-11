@@ -74,6 +74,10 @@ export const en = {
     Trend,
     string
   >,
+  /** A guess at 0 km that is not the answer: it shares a border with it. */
+  bordersIt: 'Borders it',
+  adjacentHeadline: 'Next door.',
+  adjacentSub: (name: string) => `${name} shares a border with the mystery country.`,
   bestSoFar: 'Best so far',
   thermometerLabel: (band: string, km: number | null) =>
     km === null ? 'No guesses yet' : `Best so far: ${band}, ${formatKm(km)}`,
