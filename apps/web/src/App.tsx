@@ -48,14 +48,16 @@ const TREND_COLOR: Partial<Record<Trend, string>> = {
 };
 
 /** Big status line under the masthead: the intro, then how the last guess compares (FR-21). */
-function Status({ trend, ready }: { trend: Trend | null; ready: boolean }) {
-  const headline = trend ? en.trendHeadline[trend] : ready ? en.intro : en.loading;
-  const sub = trend ? en.trendSub[trend] : ready ? en.introSub : '';
+function Status({ trend }: { trend: Trend | null }) {
+  // The intro shows straight away, before the API answers: it is the largest text on first
+  // paint (Lighthouse LCP). Only trend messages animate in.
+  const headline = trend ? en.trendHeadline[trend] : en.intro;
+  const sub = trend ? en.trendSub[trend] : en.introSub;
   return (
     <div aria-live="polite">
       <p
         key={trend ?? 'intro'}
-        className={`headline slide-in text-5xl ${trend ? (TREND_COLOR[trend] ?? '') : ''}`}
+        className={`headline text-5xl ${trend ? `slide-in ${TREND_COLOR[trend] ?? ''}` : ''}`}
       >
         {headline}
       </p>
@@ -217,7 +219,7 @@ export function App() {
         </div>
 
         <div className="flex flex-col gap-4 px-4 pt-1 pb-4 md:px-6 md:pt-5 md:pb-6">
-          {!over && <Status trend={trend} ready={!!game} />}
+          {!over && <Status trend={trend} />}
 
           {error && (
             <div

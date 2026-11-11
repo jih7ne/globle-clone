@@ -32,7 +32,7 @@ export function Thermometer({ best, bestName, compact = false }: Props) {
     : en.noGuessesYet;
 
   return (
-    <figure
+    <div
       className="flex flex-col gap-1.5"
       role="meter"
       aria-label={label}
@@ -41,12 +41,12 @@ export function Thermometer({ best, bestName, compact = false }: Props) {
       aria-valuenow={level}
       aria-valuetext={label}
     >
-      <figcaption className="caption flex justify-between gap-3" aria-hidden="true">
+      <div className="caption flex justify-between gap-3" aria-hidden="true">
         <span className="text-muted">{en.bestSoFar}</span>
         <span className="truncate">
           {best && bestName ? `${bestName} — ${en.km(best.distanceKm)}` : '—'}
         </span>
-      </figcaption>
+      </div>
       <div className="grid h-4 grid-cols-5 border-2 border-ink" aria-hidden="true">
         {LEVELS.map((l, i) => (
           <div
@@ -68,6 +68,6 @@ export function Thermometer({ best, bestName, compact = false }: Props) {
           ))}
         </div>
       )}
-    </figure>
+    </div>
   );
 }

@@ -9,4 +9,6 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: { proxy },
   preview: { proxy },
+  // The map worker (lib/baseLayer.worker.ts) uses top-level await and dynamic imports.
+  worker: { format: 'es' },
 });

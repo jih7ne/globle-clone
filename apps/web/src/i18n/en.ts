@@ -14,7 +14,6 @@ export const en = {
       year: 'numeric',
     });
   },
-  loading: 'Loading today’s country…',
 
   intro: 'Find the country.',
   introSub: 'One mystery country a day. The closer you get, the hotter it gets.',

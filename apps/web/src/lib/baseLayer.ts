@@ -1,19 +1,15 @@
 import {
-  type BufferGeometry,
+  BufferAttribute,
+  BufferGeometry,
   Group,
   LineBasicMaterial,
   LineSegments,
   Mesh,
   MeshBasicMaterial,
 } from 'three';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import ConicPolygonGeometry from 'three-conic-polygon-geometry';
-import GeoJsonGeometry from 'three-geojson-geometry';
+import type { BaseLayerBuffers, GeometryBuffers } from './baseGeometry';
 import type { CountryFeature } from './geo';
 
-/** three-globe's globe radius and default polygon curvature resolution (degrees). */
-const RADIUS = 100;
-const CURVATURE = 5;
 /** Relative altitudes: land just above the ocean, borders just above the land. */
 export const LAND_ALTITUDE = 0.006;
 const BORDER_ALTITUDE = 0.0065;
@@ -24,18 +20,37 @@ export interface BaseLayerColors {
   border: string;
 }
 
-type Polygon = [number, number][][];
-const polygonsOf = (f: CountryFeature): Polygon[] =>
-  f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates;
+/**
+ * Triangulates the map in a worker, falling back to the main thread where workers are
+ * unavailable. Resolves with plain vertex arrays.
+ */
+export function loadBaseLayer(features: readonly CountryFeature[]): Promise<BaseLayerBuffers> {
+  const onMainThread = () => import('./baseGeometry').then((m) => m.computeBaseLayer(features));
+  if (typeof Worker === 'undefined') return onMainThread();
+  return new Promise<BaseLayerBuffers>((resolve, reject) => {
+    const worker = new Worker(new URL('./baseLayer.worker.ts', import.meta.url), {
+      type: 'module',
+    });
+    worker.onmessage = (e: MessageEvent<BaseLayerBuffers>) => {
+      worker.terminate();
+      resolve(e.data);
+    };
+    worker.onerror = (e) => {
+      e.preventDefault();
+      worker.terminate();
+      onMainThread().then(resolve, reject);
+    };
+    worker.postMessage(features);
+  });
+}
 
-function mergedCaps(polygons: Polygon[]): BufferGeometry {
-  const parts = polygons.map(
-    (p) => new ConicPolygonGeometry(p, 0, RADIUS, false, true, false, CURVATURE),
-  );
-  const merged = mergeGeometries(parts, false);
-  parts.forEach((g) => g.dispose());
-  if (!merged) throw new Error('Could not merge the land shapes');
-  return merged;
+function geometryOf(b: GeometryBuffers): BufferGeometry {
+  const g = new BufferGeometry();
+  g.setAttribute('position', new BufferAttribute(b.position, 3));
+  if (b.normal) g.setAttribute('normal', new BufferAttribute(b.normal, 3));
+  if (b.uv) g.setAttribute('uv', new BufferAttribute(b.uv, 2));
+  if (b.index) g.setIndex(new BufferAttribute(b.index, 1));
+  return g;
 }
 
 /**
@@ -46,28 +61,20 @@ function mergedCaps(polygons: Polygon[]): BufferGeometry {
  * integrated graphics. Merged, the static map costs 3 draw calls; the library's polygons
  * layer is only used for the few guessed countries drawn on top.
  */
-export function buildBaseLayer(features: readonly CountryFeature[], colors: BaseLayerColors) {
-  const playable = features.filter((f) => f.properties.playable).flatMap(polygonsOf);
-  const disputed = features.filter((f) => !f.properties.playable).flatMap(polygonsOf);
-
+export function createBaseLayer(buffers: BaseLayerBuffers, colors: BaseLayerColors): Group {
   const group = new Group();
   group.name = 'base-map';
-  for (const [polygons, color] of [
-    [playable, colors.land],
-    [disputed, colors.disputed],
+  for (const [b, color] of [
+    [buffers.land, colors.land],
+    [buffers.disputed, colors.disputed],
   ] as const) {
-    if (!polygons.length) continue;
-    const mesh = new Mesh(mergedCaps(polygons), new MeshBasicMaterial({ color }));
+    if (!b) continue;
+    const mesh = new Mesh(geometryOf(b), new MeshBasicMaterial({ color }));
     mesh.scale.setScalar(1 + LAND_ALTITUDE);
     group.add(mesh);
   }
-
   const borders = new LineSegments(
-    new GeoJsonGeometry(
-      { type: 'MultiPolygon', coordinates: [...playable, ...disputed] },
-      RADIUS,
-      CURVATURE,
-    ),
+    geometryOf(buffers.borders),
     new LineBasicMaterial({ color: colors.border }),
   );
   borders.scale.setScalar(1 + BORDER_ALTITUDE);
@@ -75,7 +82,7 @@ export function buildBaseLayer(features: readonly CountryFeature[], colors: Base
   return group;
 }
 
-/** Frees the GPU buffers of a layer built by buildBaseLayer. */
+/** Frees the GPU buffers of a layer built by createBaseLayer. */
 export function disposeBaseLayer(group: Group) {
   group.traverse((obj) => {
     if (obj instanceof Mesh || obj instanceof LineSegments) {

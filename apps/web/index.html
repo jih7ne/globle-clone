@@ -9,11 +9,13 @@
     />
     <title>Getting Warmer</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- The headline font, fetched with the app instead of after the first render (LCP). -->
     <link
-      href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=IBM+Plex+Mono:wght@500;600&display=swap"
-      rel="stylesheet"
+      rel="preload"
+      href="../../node_modules/@fontsource-variable/archivo/files/archivo-latin-wdth-normal.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
     />
   </head>
   <body>

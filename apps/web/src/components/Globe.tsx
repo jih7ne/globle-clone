@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import GlobeGl, { type GlobeMethods } from 'react-globe.gl';
 import { MeshBasicMaterial } from 'three';
-import { LAND_ALTITUDE, buildBaseLayer, disposeBaseLayer } from '../lib/baseLayer';
+import type { BaseLayerBuffers } from '../lib/baseGeometry';
+import { LAND_ALTITUDE, createBaseLayer, disposeBaseLayer, loadBaseLayer } from '../lib/baseLayer';
 import type { CountryFeature, GeoData } from '../lib/geo';
 
 /** Editorial palette: flat black ocean, paper land, ink borders, no lighting. */
@@ -109,20 +110,29 @@ export default function Globe({ geo, colors, labels, focus, answer, reducedMotio
     return c ? [c] : [];
   }, [answer, geo]);
 
-  // The static world map, merged into a few draw calls (see baseLayer.ts).
-  const base = useMemo(
-    () => buildBaseLayer(geo.features, { land: LAND, disputed: LAND_DISPUTED, border: BORDER }),
-    [geo],
-  );
+  // The static world map, merged into a few draw calls and built in a worker (baseLayer.ts).
+  const [buffers, setBuffers] = useState<BaseLayerBuffers | null>(null);
   useEffect(() => {
-    const scene = ready ? ref.current?.scene() : undefined;
-    if (!scene) return;
+    let cancelled = false;
+    loadBaseLayer(geo.features).then(
+      (b) => !cancelled && setBuffers(b),
+      (err: unknown) => console.error(err),
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [geo]);
+  useEffect(() => {
+    const scene = ready && buffers ? ref.current?.scene() : undefined;
+    if (!scene || !buffers) return;
+    const base = createBaseLayer(buffers, { land: LAND, disputed: LAND_DISPUTED, border: BORDER });
     scene.add(base);
+    wake.current();
     return () => {
       scene.remove(base);
       disposeBaseLayer(base);
     };
-  }, [ready, base]);
+  }, [ready, buffers]);
 
   // Only guessed countries go through the library's per-polygon layer, drawn over the map.
   const guessed = useMemo(
