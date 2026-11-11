@@ -112,6 +112,8 @@ export default function Globe({ geo, colors, labels, focus, answer, reducedMotio
 
   // The static world map, merged into a few draw calls and built in a worker (baseLayer.ts).
   const [buffers, setBuffers] = useState<BaseLayerBuffers | null>(null);
+  // For the E2E tests: the land is actually in the scene, not just the ocean.
+  const [mapReady, setMapReady] = useState(false);
   useEffect(() => {
     let cancelled = false;
     loadBaseLayer(geo.features).then(
@@ -127,8 +129,10 @@ export default function Globe({ geo, colors, labels, focus, answer, reducedMotio
     if (!scene || !buffers) return;
     const base = createBaseLayer(buffers, { land: LAND, disputed: LAND_DISPUTED, border: BORDER });
     scene.add(base);
+    setMapReady(true);
     wake.current();
     return () => {
+      setMapReady(false);
       scene.remove(base);
       disposeBaseLayer(base);
     };
@@ -141,7 +145,12 @@ export default function Globe({ geo, colors, labels, focus, answer, reducedMotio
   );
 
   return (
-    <div ref={box} className="absolute inset-0" aria-hidden="true">
+    <div
+      ref={box}
+      className="absolute inset-0"
+      aria-hidden="true"
+      data-map={mapReady ? 'ready' : 'loading'}
+    >
       {size.width > 0 && (
         <GlobeGl
           ref={ref}

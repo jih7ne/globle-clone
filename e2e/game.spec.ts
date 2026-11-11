@@ -146,3 +146,21 @@ test.describe('languages', () => {
     await context.close();
   });
 });
+
+test.describe('globe', () => {
+  test('draws the land even when the map code loads slowly @mobile', async ({ page, context }) => {
+    // On the live site the worker's import is a network fetch; a slow one once made the
+    // worker miss the page's message, and the globe stayed an empty ocean.
+    await context.route(/baseGeometry-.*\.js$/, async (route) => {
+      await new Promise((r) => setTimeout(r, 2000));
+      await route.continue();
+    });
+    const fallbacks: string[] = [];
+    page.on('console', (m) => m.text().includes('Map worker failed') && fallbacks.push(m.text()));
+    await page.goto('/');
+    await startPlaying(page);
+    await expect(page.locator('[data-map="ready"]')).toBeAttached({ timeout: 30_000 });
+    // Built by the worker, not rescued by the main-thread fallback.
+    expect(fallbacks).toEqual([]);
+  });
+});

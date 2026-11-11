@@ -82,7 +82,7 @@ describe('distances.json', () => {
         expect(v, `${codes[i]}-${codes[j]}`).toBe(km[j]![i]);
       }
     }
-  });
+  }, 30_000); // 38,025 pairs: under a second alone, but it once timed out under load.
 
   it.each([
     ['FRA', 'ESP'],

@@ -87,6 +87,7 @@ Kept as raw material for the write-up.
 - **Page frozen for 73 s:** some country rings had the wrong winding order for d3-geo, so the globe library triangulated the inverse shape. Found while profiling; now guarded by a unit test and a data test on every shape.
 - **Morocco cut in two:** Western Sahara was a separate shape, leaving a hole (spotted in review). Data tests now check Morocco–Mauritania at 0 km and a point inside the merged shape.
 - **French guess list not found by E2E:** the region was located by the English word "guess"; the French run caught it.
+- **No land on the live site:** the map worker started listening only after loading its code, so on a real network the page's message arrived first and was silently dropped: the globe stayed an empty ocean. Every local test passed because the code loaded instantly. Now the worker listens immediately, the page falls back to building the map itself after 20 s, and an E2E test delays the worker's code and checks the land is drawn by the worker.
 - **Language button failing axe:** visible "FR" but accessible name "Français" (`label-content-name-mismatch`).
 
 ## Running the tests

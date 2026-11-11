@@ -24,6 +24,12 @@ export interface BaseLayerColors {
  * Triangulates the map in a worker, falling back to the main thread where workers are
  * unavailable. Resolves with plain vertex arrays.
  */
+/** What baseLayer.worker.ts posts back. */
+type WorkerReply = { ok: true; buffers: BaseLayerBuffers } | { ok: false; error: string };
+
+/** Generous: a slow phone needs a few seconds; past this the worker is assumed stuck. */
+const WORKER_TIMEOUT_MS = 20_000;
+
 export function loadBaseLayer(features: readonly CountryFeature[]): Promise<BaseLayerBuffers> {
   const onMainThread = () => import('./baseGeometry').then((m) => m.computeBaseLayer(features));
   if (typeof Worker === 'undefined') return onMainThread();
@@ -31,14 +37,23 @@ export function loadBaseLayer(features: readonly CountryFeature[]): Promise<Base
     const worker = new Worker(new URL('./baseLayer.worker.ts', import.meta.url), {
       type: 'module',
     });
-    worker.onmessage = (e: MessageEvent<BaseLayerBuffers>) => {
+    let settled = false;
+    const finish = (buffers: BaseLayerBuffers | null, why?: unknown) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
       worker.terminate();
-      resolve(e.data);
+      if (buffers) return resolve(buffers);
+      console.warn('Map worker failed, building the map on the main thread:', why);
+      onMainThread().then(resolve, reject);
     };
+    // Never leave the globe without land: if the worker stays silent, build it here.
+    const timer = setTimeout(() => finish(null, 'no answer in time'), WORKER_TIMEOUT_MS);
+    worker.onmessage = (e: MessageEvent<WorkerReply>) =>
+      e.data.ok ? finish(e.data.buffers) : finish(null, e.data.error);
     worker.onerror = (e) => {
       e.preventDefault();
-      worker.terminate();
-      onMainThread().then(resolve, reject);
+      finish(null, e.message);
     };
     worker.postMessage(features);
   });
