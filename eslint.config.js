@@ -5,7 +5,7 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 import globals from 'globals';
 
 export default tseslint.config(
-  { ignores: ['**/dist', '**/coverage', '**/.wrangler', '**/node_modules'] },
+  { ignores: ['**/dist', '**/coverage', '**/.wrangler', '**/node_modules', '.cache'] },
   js.configs.recommended,
   ...tseslint.configs.strict,
   {

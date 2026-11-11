@@ -12,13 +12,15 @@
     "@gw/shared": "*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-globe.gl": "^2.38.0"
+    "react-globe.gl": "^2.38.0",
+    "three": "^0.187.0"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.5",
     "@testing-library/react": "^16.3.3",
     "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",
+    "@types/three": "^0.187.0",
     "@vitejs/plugin-react": "^6.3.0",
     "jsdom": "^29.1.1",
     "tailwindcss": "^4.3.5",

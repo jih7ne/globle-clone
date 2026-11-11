@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bandFor, emojiFor } from './bands';
+import { bandFor, colorForDistance, emojiFor } from './bands';
 
 describe('bandFor', () => {
   it.each([
@@ -33,5 +33,24 @@ describe('emojiFor', () => {
     expect(
       ['found', 'burning', 'hot', 'warm', 'cool', 'freezing'].map((b) => emojiFor(b as never)),
     ).toEqual(['🎯', '🟥', '🟧', '🟨', '🟦', '⬜']);
+  });
+});
+
+describe('colorForDistance', () => {
+  it('uses the band colours at the stops', () => {
+    expect(colorForDistance(0)).toBe('#e3170a');
+    expect(colorForDistance(1000)).toBe('#ff5f00');
+    expect(colorForDistance(5000)).toBe('#3b6fe0');
+    expect(colorForDistance(8000)).toBe('#9cc8f0');
+    expect(colorForDistance(19000)).toBe('#9cc8f0');
+  });
+
+  it('interpolates between stops', () => {
+    // Halfway between #E3170A and #FF5F00.
+    expect(colorForDistance(500)).toBe('#f13b05');
+  });
+
+  it('treats negative distances as 0', () => {
+    expect(colorForDistance(-5)).toBe('#e3170a');
   });
 });

@@ -8,13 +8,13 @@ interface BandDef {
   emoji: string;
 }
 
-const FREEZING: BandDef = { band: 'freezing', maxKm: Infinity, color: '#DCEEF8', emoji: '⬜' };
+const FREEZING: BandDef = { band: 'freezing', maxKm: Infinity, color: '#9CC8F0', emoji: '⬜' };
 
 export const BANDS: readonly BandDef[] = [
-  { band: 'burning', maxKm: 250, color: '#C62828', emoji: '🟥' },
-  { band: 'hot', maxKm: 1000, color: '#EF6C00', emoji: '🟧' },
-  { band: 'warm', maxKm: 2500, color: '#F9A825', emoji: '🟨' },
-  { band: 'cool', maxKm: 5000, color: '#4FA3D9', emoji: '🟦' },
+  { band: 'burning', maxKm: 250, color: '#E3170A', emoji: '🟥' },
+  { band: 'hot', maxKm: 1000, color: '#FF5F00', emoji: '🟧' },
+  { band: 'warm', maxKm: 2500, color: '#FFB000', emoji: '🟨' },
+  { band: 'cool', maxKm: 5000, color: '#3B6FE0', emoji: '🟦' },
   FREEZING,
 ];
 
@@ -38,4 +38,38 @@ export function bandFor(distanceKm: number, correct = false): Band {
 
 export function emojiFor(band: Band): string {
   return EMOJI[band];
+}
+
+/** Colour stops for the globe: the band colours placed along the distance scale. */
+const COLOR_STOPS: readonly [km: number, hex: string][] = [
+  [0, '#E3170A'],
+  [1000, '#FF5F00'],
+  [2500, '#FFB000'],
+  [5000, '#3B6FE0'],
+  [8000, '#9CC8F0'],
+];
+
+const hexToRgb = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+
+/** Continuous globe colour for a distance (FR-06), as lower-case #rrggbb. */
+export function colorForDistance(distanceKm: number): string {
+  const km = Math.max(0, distanceKm);
+  let lower: readonly [number, string] = COLOR_STOPS[0] as readonly [number, string];
+  for (const stop of COLOR_STOPS) {
+    if (km <= stop[0]) {
+      if (stop === lower) return stop[1].toLowerCase();
+      const t = (km - lower[0]) / (stop[0] - lower[0]);
+      const a = hexToRgb(lower[1]);
+      const b = hexToRgb(stop[1]);
+      return `#${a
+        .map((v, i) =>
+          Math.round(v + ((b[i] as number) - v) * t)
+            .toString(16)
+            .padStart(2, '0'),
+        )
+        .join('')}`;
+    }
+    lower = stop;
+  }
+  return lower[1].toLowerCase();
 }
