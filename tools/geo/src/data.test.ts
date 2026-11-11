@@ -6,7 +6,9 @@ import { describe, expect, it } from 'vitest';
 import countries from '../../../packages/shared/src/data/countries.json';
 import distances from '../../../apps/api/src/data/distances.json';
 import { normalizeName } from '../../../packages/shared/src/names';
+import type { MultiPolygonCoords } from './distance';
 import { PLAYABLE_CODES } from './un-members';
+import { signedArea } from './winding';
 
 const GEOJSON_PATH = new URL('../../../apps/web/public/geo/countries.geojson', import.meta.url);
 const geo: {
@@ -133,5 +135,19 @@ describe('countries.geojson', () => {
       .map((f) => f.properties.code);
     expect(playable.sort()).toEqual([...PLAYABLE_CODES].sort());
     for (const f of geo.features) expect(f.geometry, f.properties.code).toBeTruthy();
+  });
+
+  // A ring wound the wrong way covers the rest of the planet and freezes the globe (winding.ts).
+  it('winds exterior rings clockwise and holes counter-clockwise, as d3-geo expects', () => {
+    for (const f of geo.features) {
+      const g = f.geometry as { type: string; coordinates: MultiPolygonCoords[number] };
+      const polygons =
+        g.type === 'Polygon' ? [g.coordinates] : (g.coordinates as unknown as MultiPolygonCoords);
+      polygons.forEach((rings, p) =>
+        rings.forEach((ring, r) =>
+          expect(signedArea(ring) > 0, `${f.properties.code} polygon ${p} ring ${r}`).toBe(r === 0),
+        ),
+      );
+    }
   });
 });

@@ -15,6 +15,7 @@ import { normalizeName } from '../../../packages/shared/src/names.ts';
 import { boundaryPoints, minDistanceKm, pointSet, type MultiPolygonCoords } from './distance.ts';
 import { EXTRA_ALIASES, NAME_OVERRIDES } from './names.ts';
 import { PLAYABLE_CODES } from './un-members.ts';
+import { windForD3 } from './winding.ts';
 
 const ROOT = join(import.meta.dirname, '../../..');
 const SOURCE = {
@@ -26,6 +27,8 @@ const SOURCE = {
 const MAX_STEP_KM = 10;
 /** Simplification for the globe shapes, tuned to keep the file under 1 MB. */
 const DISPLAY_SIMPLIFY_M = 5000;
+/** Coarser simplification for Antarctica, which is not playable (see main). */
+const COARSE_SIMPLIFY_M = 25000;
 /** Natural Earth codes that differ from ISO 3166-1 alpha-3. */
 const NE_TO_ISO: Record<string, string> = { SDS: 'SSD', PSX: 'PSE' };
 const isoCode = (adm0: string) => NE_TO_ISO[adm0] ?? adm0;
@@ -197,13 +200,33 @@ async function main() {
     `-filter-fields ADM0_A3 -simplify interval=${DISPLAY_SIMPLIFY_M} keep-shapes`,
     'precision=0.01',
   );
+  // Antarctica is unplayable but huge: at the normal level it alone took most of the globe's
+  // triangulation time on load (~0.8 s), so it gets a much coarser outline.
+  const coarse = await simplify(
+    text,
+    `-filter "ADM0_A3 == 'ATA'" -filter-fields ADM0_A3 -simplify interval=${COARSE_SIMPLIFY_M} keep-shapes`,
+    'precision=0.01',
+  );
   const features = display.features.flatMap((f) => {
     const code = isoCode(f.properties.ADM0_A3);
     // Tiny countries (e.g. Vatican City) vanish when simplified: keep their original shape.
     const original = source.features.find((x) => x.properties.ADM0_A3 === f.properties.ADM0_A3);
-    const geometry = f.geometry ?? (playable.has(code) ? original?.geometry : null);
+    const replacement = coarse.features.find((x) => x.properties.ADM0_A3 === f.properties.ADM0_A3);
+    const geometry =
+      replacement?.geometry ?? f.geometry ?? (playable.has(code) ? original?.geometry : null);
     if (!geometry) return [];
-    return [{ type: 'Feature', properties: { code, playable: playable.has(code) }, geometry }];
+    // mapshaper and Natural Earth disagree on winding; the globe needs d3's (see winding.ts).
+    const coordinates = windForD3(multiPolygon(geometry));
+    return [
+      {
+        type: 'Feature',
+        properties: { code, playable: playable.has(code) },
+        geometry:
+          coordinates.length === 1
+            ? { type: 'Polygon', coordinates: coordinates[0] }
+            : { type: 'MultiPolygon', coordinates },
+      },
+    ];
   });
   await writeJson('apps/web/public/geo/countries.geojson', {
     type: 'FeatureCollection',
