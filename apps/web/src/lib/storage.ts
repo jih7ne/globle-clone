@@ -23,6 +23,7 @@ export const KEYS = {
   session: 'gw:session',
   game: 'gw:game',
   seenHowTo: 'gw:seen-how-to',
+  history: 'gw:history',
 } as const;
 
 /** Anonymous per-device ID, created on first use (specification, section 5). */

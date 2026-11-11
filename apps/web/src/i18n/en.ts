@@ -90,6 +90,48 @@ export const en = {
   statsMedian: 'Median guesses',
   statsWithin5: 'Found in 5 or fewer',
   statsUnavailable: 'Global stats are unavailable right now.',
+  statsMean: 'Average',
+  statsTopFirst: 'Most common first guess',
+  streakLabel: 'Streak',
+  share: 'Share result',
+  shareCopied: 'Copied',
+  shareFailed: 'Couldn’t copy automatically. Select and copy this text:',
+
+  stats: 'Stats',
+  statPlayed: 'Played',
+  statWinRate: 'Win rate',
+  statStreak: 'Current streak',
+  statBestStreak: 'Best streak',
+  statDistribution: 'Wins by number of guesses',
+  statAverage: 'Average',
+  statEmpty: 'Finish a game to start your stats.',
+  statDeviceOnly: 'Stored on this device only. No account, no tracking.',
+
+  about: 'About',
+  repoUrl: 'https://github.com/jih7ne/globle-clone',
+  aboutRepo: 'Source code on GitHub',
+  aboutSections: [
+    {
+      title: 'The game',
+      body: 'One mystery country a day, the same for everyone with the same local date. Each guess tells you how far it is, border to border, and the heat scale goes from Freezing to Burning. Inspired by Globle.',
+    },
+    {
+      title: 'Map data',
+      body: 'Borders and names come from Natural Earth (public domain). The 195 playable countries are the UN member states plus the two observer states. Western Sahara is drawn as part of Morocco. Borders are a simplification and do not take sides in any dispute.',
+    },
+    {
+      title: 'Fair play',
+      body: 'The answer stays on the server until you win or give up. Each guess is checked with a signed token, so global stats only count real games.',
+    },
+    {
+      title: 'Privacy',
+      body: 'No account, no cookies, no tracking. Your stats live in this browser. The server keeps one anonymous row per finished game for the daily stats, never your IP address.',
+    },
+    {
+      title: 'How it is tested',
+      body: 'Unit and property tests for the game logic, data tests for every border distance, API integration tests against a real local database, all run in CI on every push.',
+    },
+  ],
   nextCountry: 'Next country in',
 
   howToPlay: 'How to play',

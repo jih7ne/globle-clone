@@ -29,7 +29,7 @@ export function GuessList({ guesses, index }: { guesses: readonly Guess[]; index
               type="button"
               aria-pressed={view === v}
               onClick={() => setView(v)}
-              className={`px-2 py-1 not-first:border-l-2 not-first:border-ink ${
+              className={`px-2 py-1 uppercase not-first:border-l-2 not-first:border-ink ${
                 view === v ? 'bg-ink text-paper' : 'hover:bg-ink/10'
               }`}
             >

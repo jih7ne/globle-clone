@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiError, NetworkError, api } from '../lib/api';
 import { localDate } from '../lib/date';
 import { isSavedGame, type SavedGame } from '../lib/game';
+import { isGameRecord, recordGame, type GameRecord } from '../lib/stats';
 import { KEYS, readJson, sessionId, writeJson } from '../lib/storage';
 
 export type GameError = 'offline' | 'clock' | 'before_launch' | 'finished_elsewhere';
@@ -9,6 +10,8 @@ export type GameError = 'offline' | 'clock' | 'before_launch' | 'finished_elsewh
 export interface UseGame {
   date: string;
   game: SavedGame | null;
+  /** Every finished game on this device, oldest first (personal stats, FR-16). */
+  history: GameRecord[];
   /** A guess or give-up is in flight. */
   busy: boolean;
   error: GameError | null;
@@ -34,9 +37,29 @@ function savedGameFor(date: string): SavedGame | null {
   return isSavedGame(saved, date) ? saved : null;
 }
 
+function readHistory(): GameRecord[] {
+  const saved = readJson<unknown>(KEYS.history);
+  return Array.isArray(saved) ? saved.filter(isGameRecord) : [];
+}
+
+/** Adds a finished game to the saved history; a no-op for a game still in progress. */
+function saveToHistory(game: SavedGame | null): GameRecord[] {
+  const history = readHistory();
+  if (!game || game.status === 'playing') return history;
+  const updated = recordGame(history, {
+    date: game.date,
+    won: game.status === 'won',
+    guesses: game.guesses.length,
+  });
+  writeJson(KEYS.history, updated);
+  return updated;
+}
+
 export function useGame(now: () => Date = () => new Date()): UseGame {
   const [date, setDate] = useState(() => localDate(now()));
   const [game, setGameState] = useState<SavedGame | null>(() => savedGameFor(date));
+  // A game finished before history existed is recorded on load.
+  const [history, setHistory] = useState<GameRecord[]>(() => saveToHistory(game));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<GameError | null>(null);
   const [attempt, setAttempt] = useState(0);
@@ -47,6 +70,7 @@ export function useGame(now: () => Date = () => new Date()): UseGame {
     gameRef.current = next;
     setGameState(next);
     if (next) writeJson(KEYS.game, next);
+    if (next && next.status !== 'playing') setHistory(saveToHistory(next));
   }, []);
 
   /** Records the end of a game; safe to call again if it failed before (NFR-07). */
@@ -166,5 +190,5 @@ export function useGame(now: () => Date = () => new Date()): UseGame {
     else if (!g) setAttempt((n) => n + 1);
   }, [finish]);
 
-  return { date, game, busy, error, guess, giveUp, retry, refreshDate };
+  return { date, game, history, busy, error, guess, giveUp, retry, refreshDate };
 }

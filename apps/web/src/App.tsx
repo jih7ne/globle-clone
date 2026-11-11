@@ -1,6 +1,8 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import { COUNTRIES, buildIndex, colorForDistance } from '@gw/shared';
+import { AboutPanel } from './components/AboutPanel';
 import { Countdown } from './components/Countdown';
+import { StatsPanel } from './components/StatsPanel';
 import { GuessInput } from './components/GuessInput';
 import { GuessList } from './components/GuessList';
 import { HowToPlay } from './components/HowToPlay';
@@ -10,6 +12,8 @@ import { useGame, type GameError } from './hooks/useGame';
 import { en } from './i18n/en';
 import { bestGuess, trendOf, type Trend } from './lib/game';
 import { loadGeo, type GeoData } from './lib/geo';
+import { shareText } from './lib/share';
+import { computeStats } from './lib/stats';
 import { KEYS, readJson, writeJson } from './lib/storage';
 
 // three.js is large: load the globe after the rest of the page (NFR-06).
@@ -62,7 +66,10 @@ function Status({ trend, ready }: { trend: Trend | null; ready: boolean }) {
 }
 
 export function App() {
-  const { game, busy, error, guess, giveUp, retry, refreshDate } = useGame();
+  const { date, game, history, busy, error, guess, giveUp, retry, refreshDate } = useGame();
+  const stats = useMemo(() => computeStats(history, date), [history, date]);
+  const [panel, setPanel] = useState<'stats' | 'about' | null>(null);
+  const closePanel = useCallback(() => setPanel(null), []);
   const index = useMemo(() => buildIndex(COUNTRIES, 'en'), []);
   const [geo, setGeo] = useState<GeoData | null>(null);
   const [showHowTo, setShowHowTo] = useState(() => !readJson<boolean>(KEYS.seenHowTo));
@@ -102,29 +109,56 @@ export function App() {
   }, [guesses, answer, nameOf]);
 
   const dateLine = game ? `${en.dayLabel(game.dayNumber)} — ${en.formatDate(game.date)}` : '—';
-  const howToButton = (
-    <button
-      type="button"
-      onClick={() => setShowHowTo(true)}
-      className="caption shrink-0 border-2 border-ink bg-paper px-2 py-1 hover:bg-ink hover:text-paper"
-    >
-      <span aria-hidden="true" className="md:hidden">
-        ?
-      </span>
-      <span className="sr-only md:not-sr-only">{en.howToPlay}</span>
-    </button>
+  const won = game?.status === 'won';
+  const share =
+    game && over
+      ? shareText({
+          dayNumber: game.dayNumber,
+          guesses,
+          won,
+          streak: stats.currentStreak,
+          url: window.location.origin,
+        })
+      : '';
+
+  const nav = (
+    <nav className="caption flex shrink-0 border-2 border-ink bg-paper" aria-label="Menu">
+      {(
+        [
+          ['stats', en.stats],
+          ['about', en.about],
+          ['howto', en.howToPlay],
+        ] as const
+      ).map(([key, label]) => (
+        <button
+          key={key}
+          type="button"
+          onClick={() => (key === 'howto' ? setShowHowTo(true) : setPanel(key))}
+          className="px-2 py-1 uppercase not-first:border-l-2 not-first:border-ink hover:bg-ink hover:text-paper"
+        >
+          {key === 'howto' ? (
+            <>
+              <span aria-hidden="true" className="md:hidden">
+                ?
+              </span>
+              <span className="sr-only md:not-sr-only">{label}</span>
+            </>
+          ) : (
+            label
+          )}
+        </button>
+      ))}
+    </nav>
   );
 
   return (
     <div className="relative flex h-dvh flex-col overflow-hidden bg-paper text-ink md:flex-row">
       {/* Mobile masthead: title, date and the heat gauge stay visible above the globe. */}
       <header className="z-10 flex flex-col gap-2 border-b-2 border-ink bg-paper px-4 pt-3 pb-3 md:hidden">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h1 className="headline text-4xl">{en.title}.</h1>
-            <p className="caption mt-1 text-muted">{dateLine}</p>
-          </div>
-          {howToButton}
+        <h1 className="headline text-4xl">{en.title}.</h1>
+        <div className="flex items-center justify-between gap-3">
+          <p className="caption text-muted">{dateLine}</p>
+          {nav}
         </div>
         <Thermometer best={best} bestName={bestName} compact />
       </header>
@@ -143,7 +177,7 @@ export function App() {
           </Suspense>
         )}
         <div className="pointer-events-none absolute inset-x-0 top-0 hidden items-start justify-end p-4 md:flex">
-          <div className="pointer-events-auto">{howToButton}</div>
+          <div className="pointer-events-auto">{nav}</div>
         </div>
         <p className="caption pointer-events-none absolute bottom-4 left-4 hidden text-muted md:block">
           {en.globeHint}
@@ -211,6 +245,8 @@ export function App() {
               index={index}
               centers={geo.centers}
               globalStats={game?.globalStats}
+              streak={stats.currentStreak}
+              share={share}
               footer={<Countdown onMidnight={refreshDate} />}
             />
           ) : (
@@ -240,6 +276,14 @@ export function App() {
       </aside>
 
       {showHowTo && <HowToPlay onClose={closeHowTo} />}
+      {panel === 'stats' && (
+        <StatsPanel
+          stats={stats}
+          todayWinGuesses={won ? guesses.length : null}
+          onClose={closePanel}
+        />
+      )}
+      {panel === 'about' && <AboutPanel onClose={closePanel} />}
     </div>
   );
 }
