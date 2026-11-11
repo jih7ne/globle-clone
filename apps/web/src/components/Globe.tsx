@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import GlobeGl, { type GlobeMethods } from 'react-globe.gl';
 import { MeshBasicMaterial } from 'three';
+import { LAND_ALTITUDE, buildBaseLayer, disposeBaseLayer } from '../lib/baseLayer';
 import type { CountryFeature, GeoData } from '../lib/geo';
 
 /** Editorial palette: flat black ocean, paper land, ink borders, no lighting. */
@@ -10,6 +11,8 @@ const LAND_DISPUTED = '#c9c3b6';
 const BORDER = '#111111';
 const RING = '#f7f4ee';
 const oceanMaterial = new MeshBasicMaterial({ color: OCEAN });
+/** Guessed countries sit raised above the flat map. */
+const GUESSED_ALTITUDE = LAND_ALTITUDE + 0.008;
 
 export interface GlobeProps {
   geo: GeoData;
@@ -59,8 +62,27 @@ export default function Globe({ geo, colors, labels, focus, answer, reducedMotio
     return c ? [c] : [];
   }, [answer, geo]);
 
-  const fill = (f: CountryFeature) =>
-    colors.get(f.properties.code) ?? (f.properties.playable ? LAND : LAND_DISPUTED);
+  // The static world map, merged into a few draw calls (see baseLayer.ts).
+  const base = useMemo(
+    () => buildBaseLayer(geo.features, { land: LAND, disputed: LAND_DISPUTED, border: BORDER }),
+    [geo],
+  );
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    const scene = ready ? ref.current?.scene() : undefined;
+    if (!scene) return;
+    scene.add(base);
+    return () => {
+      scene.remove(base);
+      disposeBaseLayer(base);
+    };
+  }, [ready, base]);
+
+  // Only guessed countries go through the library's per-polygon layer, drawn over the map.
+  const guessed = useMemo(
+    () => geo.features.filter((f) => colors.has(f.properties.code)),
+    [geo, colors],
+  );
 
   return (
     <div ref={box} className="absolute inset-0" aria-hidden="true">
@@ -72,13 +94,12 @@ export default function Globe({ geo, colors, labels, focus, answer, reducedMotio
           backgroundColor="rgba(0,0,0,0)"
           showAtmosphere={false}
           globeMaterial={oceanMaterial}
-          polygonsData={geo.features}
-          polygonCapColor={(f) => fill(f as CountryFeature)}
+          onGlobeReady={() => setReady(true)}
+          polygonsData={guessed}
+          polygonCapColor={(f) => colors.get((f as CountryFeature).properties.code) ?? LAND}
           polygonSideColor={() => 'rgba(17, 17, 17, 0.6)'}
           polygonStrokeColor={() => BORDER}
-          polygonAltitude={(f) =>
-            colors.has((f as CountryFeature).properties.code) ? 0.014 : 0.006
-          }
+          polygonAltitude={GUESSED_ALTITUDE}
           polygonLabel={(f) => {
             const label = labels.get((f as CountryFeature).properties.code);
             return label ? `<div class="globe-label">${escapeHtml(label)}</div>` : '';
