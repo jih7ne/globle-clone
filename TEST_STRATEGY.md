@@ -76,7 +76,7 @@ Honest gaps against section 10 of the specification:
 
 - **Mocked clock E2E:** midnight rollover, DST days of 23 and 25 hours, and a broken streak after a missed day are tested at unit level (`dates.test.ts`, `stats.test.ts`) but not in the browser.
 - **Firefox and WebKit:** E2E runs on Chromium only.
-- **Lighthouse CI:** measured by hand. Last local result (production build, brotli, mobile simulation with this laptop's CPU calibrated): performance about 65–71, accessibility, best practices and SEO 100. The 85 target is not met yet; the 3D globe library is the main cost. To be re-measured on the deployed site.
+- **Lighthouse CI:** measured by hand, not yet in CI. On the live site (mobile, 11 November 2026): performance 83–85 with the CPU slowdown calibrated for the test laptop, 74 with the default 4× slowdown; accessibility, best practices and SEO 100. The 3D globe library is the main remaining cost.
 - **k6 load test** for NFR-05: needs the deployed API.
 - **E2E on the Pages preview:** E2E runs against a local build and Worker in CI; previews are deployed but not tested.
 

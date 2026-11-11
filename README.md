@@ -4,7 +4,9 @@ A daily geography game: find the mystery country, guided only by how far each gu
 
 [![CI](https://github.com/jih7ne/globle-clone/actions/workflows/ci.yml/badge.svg)](https://github.com/jih7ne/globle-clone/actions/workflows/ci.yml)
 
-> Status: in development (week 6 of 6), not deployed yet. See the [specification](docs/SPECIFICATION.md) and the [test strategy](TEST_STRATEGY.md).
+**Play it: https://getting-warmer.pages.dev** (No. 001 was 11 November 2026).
+
+> Status: launched, in beta. See the [specification](docs/SPECIFICATION.md) and the [test strategy](TEST_STRATEGY.md).
 
 English and French. No account, no cookies, no tracking.
 

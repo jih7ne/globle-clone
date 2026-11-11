@@ -5,16 +5,15 @@
   "compatibility_date": "2026-11-01",
   "observability": { "enabled": true },
   "vars": {
-    // Day #1. Still an open question in the specification (section 11).
-    "LAUNCH_DATE": "2026-11-10",
+    // Day #1 (No. 001).
+    "LAUNCH_DATE": "2026-11-11",
   },
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "getting-warmer",
-      // Placeholder until the database is created with `wrangler d1 create getting-warmer`.
-      // Local development (`wrangler dev`) works without a real ID.
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      // Production database (region WEUR). `wrangler dev` uses a local copy instead.
+      "database_id": "fe1cb40b-eac9-4a52-952b-855a9d38e9a8",
       "migrations_dir": "migrations",
     },
   ],
