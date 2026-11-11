@@ -96,6 +96,7 @@ describe('distances.json', () => {
     ['FRA', 'BRA'], // multi-polygon: French Guiana
     ['FRA', 'SUR'],
     ['ESP', 'MAR'], // Ceuta and Melilla
+    ['MAR', 'MRT'], // Western Sahara is part of Morocco
   ])('%s and %s are neighbours (0 km)', (a, b) => {
     expect(d(a, b)).toBe(0);
   });
@@ -135,6 +136,28 @@ describe('countries.geojson', () => {
       .map((f) => f.properties.code);
     expect(playable.sort()).toEqual([...PLAYABLE_CODES].sort());
     for (const f of geo.features) expect(f.geometry, f.properties.code).toBeTruthy();
+  });
+
+  it('draws Morocco as one shape that includes Western Sahara', () => {
+    const codes = geo.features.map((f) => f.properties.code);
+    expect(codes.filter((c) => c === 'MAR')).toHaveLength(1);
+    expect(codes).not.toContain('SAH');
+    expect(codes).not.toContain('ESH');
+    // A point inland in the south of Western Sahara must fall inside Morocco's outline.
+    const mar = geo.features.find((f) => f.properties.code === 'MAR')!;
+    const g = mar.geometry as { type: string; coordinates: unknown };
+    const polygons = (g.type === 'Polygon' ? [g.coordinates] : g.coordinates) as MultiPolygonCoords;
+    const [x, y] = [-13.5, 23.5];
+    const inside = polygons.some(([outer]) => {
+      let hit = false;
+      for (let i = 0, j = outer!.length - 1; i < outer!.length; j = i++) {
+        const [xi, yi] = outer![i]!;
+        const [xj, yj] = outer![j]!;
+        if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) hit = !hit;
+      }
+      return hit;
+    });
+    expect(inside).toBe(true);
   });
 
   // A ring wound the wrong way covers the rest of the planet and freezes the globe (winding.ts).

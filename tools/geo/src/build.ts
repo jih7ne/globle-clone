@@ -29,6 +29,12 @@ const MAX_STEP_KM = 10;
 const DISPLAY_SIMPLIFY_M = 5000;
 /** Coarser simplification for Antarctica, which is not playable (see main). */
 const COARSE_SIMPLIFY_M = 25000;
+/**
+ * Territories drawn and measured as part of a playable country (Natural Earth ADM0_A3).
+ * Western Sahara is shown as part of Morocco, so Morocco appears whole on the globe and its
+ * distances match what players see.
+ */
+const MERGED_INTO: Record<string, string> = { SAH: 'MAR' };
 /** Natural Earth codes that differ from ISO 3166-1 alpha-3. */
 const NE_TO_ISO: Record<string, string> = { SDS: 'SSD', PSX: 'PSE' };
 const isoCode = (adm0: string) => NE_TO_ISO[adm0] ?? adm0;
@@ -151,12 +157,26 @@ function buildCountries(source: Collection<NeProps>) {
     .sort((a, b) => a.name.en.localeCompare(b.name.en, 'en'));
 }
 
+/** Relabels each merged territory with its country's code (see MERGED_INTO). */
+function mergeTerritories<P extends { ADM0_A3: string }>(source: Collection<P>): Collection<P> {
+  return {
+    ...source,
+    features: source.features.map((f) => {
+      const into = MERGED_INTO[f.properties.ADM0_A3];
+      return into ? { ...f, properties: { ...f.properties, ADM0_A3: into } } : f;
+    }),
+  };
+}
+
 function buildDistances(source: Collection<{ ADM0_A3: string }>) {
   const codes = [...PLAYABLE_CODES].sort();
   const sets = codes.map((code) => {
-    const f = source.features.find((x) => isoCode(x.properties.ADM0_A3) === code);
-    if (!f) throw new Error(`Missing geometry for ${code}`);
-    return pointSet(boundaryPoints(multiPolygon(f.geometry), MAX_STEP_KM));
+    // Every shape carrying the code, so merged territories count as part of the country.
+    const polygons = source.features
+      .filter((x) => isoCode(x.properties.ADM0_A3) === code)
+      .flatMap((x) => multiPolygon(x.geometry));
+    if (!polygons.length) throw new Error(`Missing geometry for ${code}`);
+    return pointSet(boundaryPoints(polygons, MAX_STEP_KM));
   });
   const total = sets.reduce((n, s) => n + s.size, 0);
   console.log(`  ${total.toLocaleString('en')} boundary points`);
@@ -188,30 +208,46 @@ async function main() {
   console.log('Countries');
   await writeJson('packages/shared/src/data/countries.json', buildCountries(source));
 
+  // Shapes only (names come from the untouched source): merged territories carry their
+  // country's code, so they are measured and drawn as part of it.
+  const shapes = mergeTerritories(source);
+  const shapesText = JSON.stringify(shapes);
+
   console.log('Distances');
   // Unsimplified on purpose: simplification drops small islands (e.g. Little Diomede),
   // and small islands often decide the nearest distance.
-  await writeJson('apps/api/src/data/distances.json', buildDistances(source));
+  await writeJson('apps/api/src/data/distances.json', buildDistances(shapes));
 
   console.log('Globe shapes');
   const playable = new Set<string>(PLAYABLE_CODES);
   const display = await simplify(
-    text,
+    shapesText,
     `-filter-fields ADM0_A3 -simplify interval=${DISPLAY_SIMPLIFY_M} keep-shapes`,
     'precision=0.01',
   );
   // Antarctica is unplayable but huge: at the normal level it alone took most of the globe's
   // triangulation time on load (~0.8 s), so it gets a much coarser outline.
   const coarse = await simplify(
-    text,
+    shapesText,
     `-filter "ADM0_A3 == 'ATA'" -filter-fields ADM0_A3 -simplify interval=${COARSE_SIMPLIFY_M} keep-shapes`,
     'precision=0.01',
   );
+  // Countries with merged territories become one outline, without the old internal border.
+  const targets = [...new Set(Object.values(MERGED_INTO))].map((c) => `'${c}'`).join(',');
+  const dissolved = await simplify(
+    shapesText,
+    `-filter "[${targets}].includes(ADM0_A3)" -filter-fields ADM0_A3 -dissolve2 ADM0_A3 -simplify interval=${DISPLAY_SIMPLIFY_M} keep-shapes`,
+    'precision=0.01',
+  );
+  const replacements = [...coarse.features, ...dissolved.features];
+  const emitted = new Set<string>();
   const features = display.features.flatMap((f) => {
     const code = isoCode(f.properties.ADM0_A3);
+    if (emitted.has(code)) return [];
+    emitted.add(code);
     // Tiny countries (e.g. Vatican City) vanish when simplified: keep their original shape.
     const original = source.features.find((x) => x.properties.ADM0_A3 === f.properties.ADM0_A3);
-    const replacement = coarse.features.find((x) => x.properties.ADM0_A3 === f.properties.ADM0_A3);
+    const replacement = replacements.find((x) => x.properties.ADM0_A3 === f.properties.ADM0_A3);
     const geometry =
       replacement?.geometry ?? f.geometry ?? (playable.has(code) ? original?.geometry : null);
     if (!geometry) return [];
