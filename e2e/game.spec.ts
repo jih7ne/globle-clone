@@ -116,3 +116,33 @@ test.describe('playing', () => {
     await expect(guessRow(page, country.name)).toBeVisible();
   });
 });
+
+test.describe('languages', () => {
+  test('switches to French and remembers it (FR-13) @mobile', async ({ page }) => {
+    await page.goto('/');
+    await startPlaying(page);
+    await page.getByRole('button', { name: 'Français' }).click();
+    await expect(page.locator('html')).toHaveAttribute('lang', 'fr');
+    await expect(page.getByRole('combobox', { name: 'Proposer un pays' })).toBeEnabled();
+    await page.reload();
+    await expect(page.getByText('Trouvez le pays.')).toBeVisible();
+    await page.getByRole('button', { name: 'English' }).click();
+    await expect(page.getByRole('combobox', { name: 'Guess a country' })).toBeEnabled();
+  });
+
+  test('a French browser starts in French and accepts English names', async ({
+    browser,
+    today,
+  }) => {
+    const context = await browser.newContext({ locale: 'fr-FR' });
+    const page = await context.newPage();
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Commencer' }).click();
+    const input = page.getByRole('combobox', { name: 'Proposer un pays' });
+    const [en, fr] = today.answer.code === 'DEU' ? ['Spain', 'Espagne'] : ['Germany', 'Allemagne'];
+    await input.fill(en);
+    await input.press('Enter');
+    await expect(guessRow(page, fr)).toBeVisible();
+    await context.close();
+  });
+});

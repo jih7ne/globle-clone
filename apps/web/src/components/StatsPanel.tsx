@@ -1,4 +1,4 @@
-import { en } from '../i18n/en';
+import { useT } from '../i18n/context';
 import { DISTRIBUTION_BUCKETS, bucketOf, type PersonalStats } from '../lib/stats';
 import { SidePanel } from './SidePanel';
 
@@ -11,6 +11,7 @@ interface Props {
 
 /** FR-16: personal stats, computed from this device's history. */
 export function StatsPanel({ stats, todayWinGuesses, onClose }: Props) {
+  const { t: en } = useT();
   const tiles = [
     { value: String(stats.played), label: en.statPlayed },
     { value: `${stats.winRate}%`, label: en.statWinRate },

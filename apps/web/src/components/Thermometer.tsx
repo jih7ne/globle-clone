@@ -1,5 +1,5 @@
 import type { Band } from '@gw/shared';
-import { en } from '../i18n/en';
+import { useT } from '../i18n/context';
 import type { Guess } from '../lib/game';
 
 /** Coldest to hottest: the scale fills one segment per band. */
@@ -21,6 +21,7 @@ interface Props {
 
 /** The heat gauge (FR-21): filled up to the best band reached so far. */
 export function Thermometer({ best, bestName, compact = false }: Props) {
+  const { t: en } = useT();
   const found = best?.band === 'found';
   const level = best
     ? found

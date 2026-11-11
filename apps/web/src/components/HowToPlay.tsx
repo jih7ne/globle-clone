@@ -1,9 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { BANDS } from '@gw/shared';
-import { en } from '../i18n/en';
+import { useT } from '../i18n/context';
 
 /** FR-15: shown on the first visit, reopenable from the header. */
 export function HowToPlay({ onClose }: { onClose: () => void }) {
+  const { t: en } = useT();
   const startRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {

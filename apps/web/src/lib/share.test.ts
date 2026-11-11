@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Guess } from './game';
+import { fr } from '../i18n/fr';
 import { shareText } from './share';
 
 const g = (code: string, distanceKm: number, band: Guess['band']): Guess => ({
@@ -50,5 +51,24 @@ describe('shareText', () => {
     const text = shareText({ dayNumber: 1, guesses, won: true, streak: 1, url: '' });
     for (const x of guesses) expect(text).not.toContain(x.code);
     expect(text).toContain('Streak: 1 day');
+  });
+});
+
+describe('shareText in French', () => {
+  it('translates the title and streak, keeps the emoji and the game name', () => {
+    const text = shareText({
+      dayNumber: 42,
+      guesses: guesses.slice(0, 2),
+      won: false,
+      streak: 1,
+      url: 'https://gw.pages.dev',
+      t: fr,
+    });
+    expect(text.split('\n')).toEqual([
+      'Getting Warmer n° 42 · abandon après 2 essais',
+      '⬜🟦',
+      'Série : 1 jour',
+      'https://gw.pages.dev',
+    ]);
   });
 });

@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { en } from '../i18n/en';
+import { useT } from '../i18n/context';
 import { formatCountdown, msUntilLocalMidnight } from '../lib/date';
 
 /** FR-12: time left until the next country; calls `onMidnight` when it is reached. */
 export function Countdown({ onMidnight }: { onMidnight: () => void }) {
+  const { t: en } = useT();
   const [left, setLeft] = useState(() => msUntilLocalMidnight());
   const prev = useRef(left);
 

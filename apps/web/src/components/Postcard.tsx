@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import type { GlobalStats, NameIndex } from '@gw/shared';
 import { colorForDistance } from '@gw/shared';
-import { en } from '../i18n/en';
+import { useT } from '../i18n/context';
 import type { Guess } from '../lib/game';
 import { ShareButton } from './ShareButton';
 
@@ -25,6 +25,7 @@ const project = ({ lat, lng }: { lat: number; lng: number }) => ({ x: lng + 180,
 
 /** The trail of guesses, in order, ending at the mystery country. */
 function MiniMap({ guesses, answer, centers }: Pick<Props, 'guesses' | 'answer' | 'centers'>) {
+  const { t: en } = useT();
   const stops = guesses
     .map((g) => ({ g, c: centers.get(g.code) }))
     .filter((s): s is { g: Guess; c: { lat: number; lng: number } } => !!s.c);
@@ -107,6 +108,7 @@ export function Postcard({
   share,
   footer,
 }: Props) {
+  const { t: en } = useT();
   const name = index.byCode.get(answer)?.name[index.lang] ?? answer;
   const stats = globalStats
     ? [

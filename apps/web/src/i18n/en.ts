@@ -1,9 +1,15 @@
 import type { Band } from '@gw/shared';
 import type { Trend } from '../lib/game';
 
-/** English UI text. French arrives with i18n in week 5 (FR-13). */
+/** English UI text. Every language (fr.ts) has exactly this shape: see Strings. */
 export const en = {
+  lang: 'en' as 'en' | 'fr',
+  /** Shown on the button that switches to the other language. */
+  otherLanguage: { short: 'FR', name: 'Français', lang: 'fr' as 'en' | 'fr' },
   title: 'Getting Warmer',
+  menu: 'Menu',
+  expandPanel: 'Expand panel',
+  collapsePanel: 'Collapse panel',
   dayLabel: (n: number) => `No. ${String(n).padStart(3, '0')}`,
   formatDate: (iso: string) => {
     // Noon local time: the calendar day of a YYYY-MM-DD string, whatever the time zone.
@@ -95,6 +101,12 @@ export const en = {
   share: 'Share result',
   shareCopied: 'Copied',
   shareFailed: 'Couldn’t copy automatically. Select and copy this text:',
+  /** First line of the share text (section 5); the game name stays in English. */
+  shareTitle: (day: number, n: number, won: boolean) =>
+    won
+      ? `Getting Warmer #${day} · ${n} ${n === 1 ? 'guess' : 'guesses'}`
+      : `Getting Warmer #${day} · gave up after ${n} ${n === 1 ? 'guess' : 'guesses'}`,
+  shareStreak: (n: number) => `Streak: ${n} ${n === 1 ? 'day' : 'days'}`,
 
   stats: 'Stats',
   statPlayed: 'Played',
@@ -158,7 +170,7 @@ export const en = {
   clockWrong: 'Your device’s date looks wrong. Check your clock and reload.',
   beforeLaunch: 'The game hasn’t launched yet. Come back soon!',
   finishedElsewhere: 'Today’s game was already finished on this device.',
-} as const;
+};
 
 export type Strings = typeof en;
 

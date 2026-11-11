@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { en } from '../i18n/en';
+import { useT } from '../i18n/context';
 
 type State = 'idle' | 'copied' | 'failed';
 
@@ -7,6 +7,7 @@ type State = 'idle' | 'copied' | 'failed';
  * FR-17: the native share sheet on touch devices, the clipboard elsewhere (section 5).
  */
 export function ShareButton({ text }: { text: string }) {
+  const { t: en } = useT();
   const [state, setState] = useState<State>('idle');
 
   useEffect(() => {

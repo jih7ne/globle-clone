@@ -9,7 +9,8 @@ import { HowToPlay } from './components/HowToPlay';
 import { Postcard } from './components/Postcard';
 import { Thermometer } from './components/Thermometer';
 import { useGame, type GameError } from './hooks/useGame';
-import { en } from './i18n/en';
+import { useT } from './i18n/context';
+import type { Strings } from './i18n/en';
 import { bestGuess, trendOf, type Trend } from './lib/game';
 import { loadGeo, type GeoData } from './lib/geo';
 import { shareText } from './lib/share';
@@ -35,12 +36,12 @@ function usePrefersReducedMotion(): boolean {
   return reduced;
 }
 
-const ERROR_TEXT: Record<GameError, string> = {
-  offline: en.offline,
-  clock: en.clockWrong,
-  before_launch: en.beforeLaunch,
-  finished_elsewhere: en.finishedElsewhere,
-};
+const ERROR_KEY = {
+  offline: 'offline',
+  clock: 'clockWrong',
+  before_launch: 'beforeLaunch',
+  finished_elsewhere: 'finishedElsewhere',
+} as const satisfies Record<GameError, keyof Strings>;
 
 const TREND_COLOR: Partial<Record<Trend, string>> = {
   warmer: 'text-burning',
@@ -49,6 +50,7 @@ const TREND_COLOR: Partial<Record<Trend, string>> = {
 
 /** Big status line under the masthead: the intro, then how the last guess compares (FR-21). */
 function Status({ trend }: { trend: Trend | null }) {
+  const { t: en } = useT();
   // The intro shows straight away, before the API answers: it is the largest text on first
   // paint (Lighthouse LCP). Only trend messages animate in.
   const headline = trend ? en.trendHeadline[trend] : en.intro;
@@ -68,11 +70,12 @@ function Status({ trend }: { trend: Trend | null }) {
 }
 
 export function App() {
+  const { t: en, lang, setLang } = useT();
   const { date, game, history, busy, error, guess, giveUp, retry, refreshDate } = useGame();
   const stats = useMemo(() => computeStats(history, date), [history, date]);
   const [panel, setPanel] = useState<'stats' | 'about' | null>(null);
   const closePanel = useCallback(() => setPanel(null), []);
-  const index = useMemo(() => buildIndex(COUNTRIES, 'en'), []);
+  const index = useMemo(() => buildIndex(COUNTRIES, lang), [lang]);
   const [geo, setGeo] = useState<GeoData | null>(null);
   const [showHowTo, setShowHowTo] = useState(() => !readJson<boolean>(KEYS.seenHowTo));
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -94,7 +97,10 @@ export function App() {
   const over = game?.status === 'won' || game?.status === 'lost';
   const trend = last && !over ? trendOf(guesses, guesses.length - 1) : null;
   const answer = over ? (game?.answer ?? null) : null;
-  const nameOf = useCallback((code: string) => index.byCode.get(code)?.name.en ?? code, [index]);
+  const nameOf = useCallback(
+    (code: string) => index.byCode.get(code)?.name[index.lang] ?? code,
+    [index],
+  );
   const bestName = best ? nameOf(best.code) : null;
 
   const colors = useMemo(() => {
@@ -108,7 +114,7 @@ export function App() {
     const m = new Map(guesses.map((g) => [g.code, `${nameOf(g.code)} · ${en.km(g.distanceKm)}`]));
     if (answer && !m.has(answer)) m.set(answer, nameOf(answer));
     return m;
-  }, [guesses, answer, nameOf]);
+  }, [guesses, answer, nameOf, en]);
 
   const dateLine = game ? `${en.dayLabel(game.dayNumber)} — ${en.formatDate(game.date)}` : '—';
   const won = game?.status === 'won';
@@ -120,11 +126,12 @@ export function App() {
           won,
           streak: stats.currentStreak,
           url: window.location.origin,
+          t: en,
         })
       : '';
 
   const nav = (
-    <nav className="caption flex shrink-0 border-2 border-ink bg-paper" aria-label="Menu">
+    <nav className="caption flex shrink-0 border-2 border-ink bg-paper" aria-label={en.menu}>
       {(
         [
           ['stats', en.stats],
@@ -150,6 +157,15 @@ export function App() {
           )}
         </button>
       ))}
+      <button
+        type="button"
+        lang={en.otherLanguage.lang}
+        onClick={() => setLang(en.otherLanguage.lang)}
+        className="border-l-2 border-ink px-2 py-1 uppercase hover:bg-ink hover:text-paper"
+      >
+        <span aria-hidden="true">{en.otherLanguage.short}</span>
+        <span className="sr-only">{en.otherLanguage.name}</span>
+      </button>
     </nav>
   );
 
@@ -226,7 +242,7 @@ export function App() {
               role="alert"
               className="flex items-center gap-3 border-2 border-burning p-3 text-sm"
             >
-              <span className="flex-1 font-semibold">{ERROR_TEXT[error]}</span>
+              <span className="flex-1 font-semibold">{en[ERROR_KEY[error]]}</span>
               {error === 'offline' && (
                 <button
                   type="button"

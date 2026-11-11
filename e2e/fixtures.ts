@@ -71,7 +71,7 @@ export async function guess(page: Page, name: string) {
 export function guessRow(page: Page, name: string) {
   return (
     page
-      .getByRole('region', { name: /guess/ })
+      .getByRole('region', { name: /guess|essai/ })
       .getByRole('listitem')
       // Letters on both sides would mean another name (Niger vs Nigeria); digits are the row number.
       .filter({ hasText: new RegExp(`(?<![A-Za-z])${name}(?![A-Za-z])`) })

@@ -1,6 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { resolveInput, search, type NameIndex } from '@gw/shared';
-import { en } from '../i18n/en';
+import { useT } from '../i18n/context';
 
 interface Props {
   index: NameIndex;
@@ -16,6 +16,7 @@ type Feedback = { kind: 'suggest'; code: string } | { kind: 'error'; message: st
  * "Did you mean?" prompt for typos (FR-22).
  */
 export function GuessInput({ index, guessed, disabled, onGuess }: Props) {
+  const { t: en } = useT();
   const [text, setText] = useState('');
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);

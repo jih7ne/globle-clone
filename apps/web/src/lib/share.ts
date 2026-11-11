@@ -1,4 +1,5 @@
 import { emojiFor } from '@gw/shared';
+import { en, type Strings } from '../i18n/en';
 import type { Guess } from './game';
 
 export interface ShareInput {
@@ -7,18 +8,16 @@ export interface ShareInput {
   won: boolean;
   streak: number;
   url: string;
+  /** UI language for the title and streak lines (English by default). */
+  t?: Pick<Strings, 'shareTitle' | 'shareStreak'>;
 }
-
-const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
 /**
  * The share text (specification, section 5): one emoji per guess in the order they were
  * made, no country names, so it never spoils the answer.
  */
-export function shareText({ dayNumber, guesses, won, streak, url }: ShareInput): string {
-  const title = won
-    ? `Getting Warmer #${dayNumber} · ${plural(guesses.length, 'guess', 'guesses')}`
-    : `Getting Warmer #${dayNumber} · gave up after ${plural(guesses.length, 'guess', 'guesses')}`;
+export function shareText({ dayNumber, guesses, won, streak, url, t = en }: ShareInput): string {
+  const title = t.shareTitle(dayNumber, guesses.length, won);
   const emoji = guesses.map((g) => emojiFor(g.band)).join('');
-  return [title, emoji, `Streak: ${plural(streak, 'day', 'days')}`, url].filter(Boolean).join('\n');
+  return [title, emoji, t.shareStreak(streak), url].filter(Boolean).join('\n');
 }

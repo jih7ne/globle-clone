@@ -1,8 +1,9 @@
-import { en } from '../i18n/en';
+import { useT } from '../i18n/context';
 import { SidePanel } from './SidePanel';
 
 /** FR-20: what the game is, where the data comes from, how it is tested. */
 export function AboutPanel({ onClose }: { onClose: () => void }) {
+  const { t: en } = useT();
   return (
     <SidePanel title={en.about} onClose={onClose}>
       <div className="flex flex-col">

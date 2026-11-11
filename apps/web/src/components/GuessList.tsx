@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { colorForDistance, type NameIndex } from '@gw/shared';
-import { en } from '../i18n/en';
+import { useT } from '../i18n/context';
 import { rankedGuesses, trendOf, type Guess } from '../lib/game';
 
 type View = 'ranked' | 'chronological';
@@ -10,6 +10,7 @@ const closeness = (km: number) => Math.max(3, 100 * (1 - Math.sqrt(Math.min(km, 
 
 /** FR-07: the guesses, ranked by distance (default) or in the order they were made. */
 export function GuessList({ guesses, index }: { guesses: readonly Guess[]; index: NameIndex }) {
+  const { t: en } = useT();
   const [view, setView] = useState<View>('ranked');
   if (guesses.length === 0) return null;
 

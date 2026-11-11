@@ -1,5 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react';
-import { en } from '../i18n/en';
+import { useT } from '../i18n/context';
 
 /** A sheet that slides in from the right (Stats, About: section 3). Escape closes it. */
 export function SidePanel({
@@ -11,6 +11,7 @@ export function SidePanel({
   onClose: () => void;
   children: ReactNode;
 }) {
+  const { t: en } = useT();
   const closeRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
