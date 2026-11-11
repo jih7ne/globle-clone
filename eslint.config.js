@@ -5,7 +5,18 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 import globals from 'globals';
 
 export default tseslint.config(
-  { ignores: ['**/dist', '**/coverage', '**/.wrangler', '**/node_modules', '.cache'] },
+  {
+    ignores: [
+      '**/dist',
+      '**/coverage',
+      '**/.wrangler',
+      '**/node_modules',
+      '.cache',
+      '.wrangler-e2e',
+      'playwright-report',
+      'test-results',
+    ],
+  },
   js.configs.recommended,
   ...tseslint.configs.strict,
   {
@@ -17,10 +28,10 @@ export default tseslint.config(
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
     },
   },
-  { files: ['*.{js,ts}'], languageOptions: { globals: globals.node } },
+  { files: ['*.{js,ts}', 'e2e/**/*.ts'], languageOptions: { globals: globals.node } },
   {
     // Offline build tooling and tests index typed arrays in tight loops; app code stays strict.
-    files: ['tools/**/*.ts', '**/*.test.{ts,tsx}'],
+    files: ['tools/**/*.ts', '**/*.test.{ts,tsx}', 'e2e/**/*.ts'],
     rules: { '@typescript-eslint/no-non-null-assertion': 'off' },
   },
 );

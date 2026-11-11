@@ -17,12 +17,14 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "typecheck": "npm run typecheck --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present && tsc -p tsconfig.e2e.json",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "build:geo": "npm run build:data -w @gw/geo"
+    "build:geo": "npm run build:data -w @gw/geo",
+    "test:e2e": "playwright test"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.65.0",
     "@vitest/coverage-v8": "^4.1.12",

@@ -11,6 +11,9 @@ const LAND_DISPUTED = '#c9c3b6';
 const BORDER = '#111111';
 const RING = '#f7f4ee';
 const oceanMaterial = new MeshBasicMaterial({ color: OCEAN });
+/** How long the globe keeps drawing after the last movement or interaction. */
+const IDLE_MS = 1500;
+const ACTIVITY_EVENTS = ['pointerdown', 'pointermove', 'wheel', 'touchstart'] as const;
 /** Guessed countries sit raised above the flat map. */
 const GUESSED_ALTITUDE = LAND_ALTITUDE + 0.008;
 
@@ -46,12 +49,56 @@ export default function Globe({ geo, colors, labels, focus, answer, reducedMotio
     return () => observer.disconnect();
   }, []);
 
+  const [ready, setReady] = useState(false);
+
+  // Render on demand: the globe only redraws while something moves, then pauses. Drawing
+  // 60 still frames a second drains batteries, and without a GPU (software WebGL) it
+  // starved the main thread so badly that the page stopped responding.
+  const wake = useRef<(ms?: number) => void>(() => undefined);
+  useEffect(() => {
+    const globe = ref.current;
+    const el = box.current;
+    if (!ready || !globe || !el) return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let paused = false;
+    const awake = (ms = IDLE_MS) => {
+      if (paused) {
+        globe.resumeAnimation();
+        paused = false;
+      }
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        globe.pauseAnimation();
+        paused = true;
+      }, ms);
+    };
+    wake.current = awake;
+    // Dragging, zooming and hovering (country tooltips) all need live frames.
+    const onActivity = () => awake();
+    for (const e of ACTIVITY_EVENTS) el.addEventListener(e, onActivity, { passive: true });
+    awake(3 * IDLE_MS); // first frames, while the map appears
+    return () => {
+      clearTimeout(timer);
+      for (const e of ACTIVITY_EVENTS) el.removeEventListener(e, onActivity);
+      if (paused) globe.resumeAnimation();
+      wake.current = () => undefined;
+    };
+  }, [ready]);
+
   // Fly to the latest guess (FR-21); instant when the player prefers reduced motion.
   useEffect(() => {
     const target = focus ? geo.centers.get(focus) : undefined;
     if (!target || !ref.current) return;
-    ref.current.pointOfView({ ...target, altitude: 1.7 }, reducedMotion ? 0 : 800);
-  }, [focus, geo, reducedMotion]);
+    const ms = reducedMotion ? 0 : 800;
+    wake.current(ms + IDLE_MS);
+    ref.current.pointOfView({ ...target, altitude: 1.7 }, ms);
+  }, [focus, geo, reducedMotion, ready]);
+
+  // New colours fade in; the answer's ring pulses for a few seconds, then holds still.
+  useEffect(() => wake.current(), [colors, size]);
+  useEffect(() => {
+    if (answer) wake.current(4000);
+  }, [answer, ready]);
 
   const points = useMemo(
     () => [...geo.tiny].map((code) => ({ code, ...(geo.centers.get(code) ?? { lat: 0, lng: 0 }) })),
@@ -67,7 +114,6 @@ export default function Globe({ geo, colors, labels, focus, answer, reducedMotio
     () => buildBaseLayer(geo.features, { land: LAND, disputed: LAND_DISPUTED, border: BORDER }),
     [geo],
   );
-  const [ready, setReady] = useState(false);
   useEffect(() => {
     const scene = ready ? ref.current?.scene() : undefined;
     if (!scene) return;
