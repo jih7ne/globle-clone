@@ -56,6 +56,7 @@ The answer is never sent before a win or give-up, and results are read from the 
 | `npm test`              | Runs every test with Vitest                                     |
 | `npm run test:e2e`      | Playwright: builds the site, starts a local Worker and database |
 | `npm run test:coverage` | Tests with coverage (85% threshold)                             |
+| `npm run report`        | Allure report of the last Vitest and Playwright runs            |
 | `npm run lint`          | ESLint                                                          |
 | `npm run typecheck`     | TypeScript in every workspace                                   |
 | `npm run format`        | Prettier                                                        |

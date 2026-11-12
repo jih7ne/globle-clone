@@ -1,6 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
 import { E2E } from './e2e/env';
 
+/** Chromium only: Firefox and WebKit reject these permission names. */
+const CLIPBOARD = ['clipboard-read', 'clipboard-write'];
+
 /**
  * End-to-end tests (specification, section 10): the production build of the front end
  * against a local Worker with its own secret and its own empty database.
@@ -10,18 +13,25 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
-  ...(process.env.CI ? { workers: 2 } : {}),
-  reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
+  // Each test drives a WebGL globe; more than two at once overloads a laptop as well as CI.
+  workers: 2,
+  reporter: [
+    ['list'],
+    ['allure-playwright', { resultsDir: 'allure-results' }],
+    ...(process.env.CI ? [['html', { open: 'never' }] as const] : []),
+  ],
   timeout: 60_000,
   expect: { timeout: 10_000 },
   use: {
     baseURL: E2E.webUrl,
     trace: 'retain-on-failure',
-    permissions: ['clipboard-read', 'clipboard-write'],
   },
   projects: [
-    { name: 'desktop', use: { ...devices['Desktop Chrome'] } },
-    { name: 'mobile', use: { ...devices['Pixel 7'] }, grep: /@mobile/ },
+    { name: 'desktop', use: { ...devices['Desktop Chrome'], permissions: CLIPBOARD } },
+    { name: 'mobile', use: { ...devices['Pixel 7'], permissions: CLIPBOARD }, grep: /@mobile/ },
+    // NFR-10: the other engines run the whole suite on desktop.
+    { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
+    { name: 'webkit', use: { ...devices['Desktop Safari'] } },
   ],
   webServer: [
     {

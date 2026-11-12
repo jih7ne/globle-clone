@@ -16,8 +16,8 @@ export interface Today {
   answer: { code: string; name: string };
   /** Countries sharing a border with the answer (0 km); none for island countries. */
   neighbours: { code: string; name: string }[];
-  /** Playable countries other than the answer, for wrong guesses. */
-  others: { code: string; name: string }[];
+  /** Playable countries other than the answer, for wrong guesses, with their distance. */
+  others: { code: string; name: string; km: number }[];
 }
 
 export const test = base.extend<{ today: Today }>({
@@ -43,12 +43,16 @@ export const test = base.extend<{ today: Today }>({
     expect(res.ok(), await res.text()).toBe(true);
     const { dayNumber } = (await res.json()) as { dayNumber: number };
     const code = await pick(dayNumber);
+    const row = distances.km[distances.codes.indexOf(code)] ?? [];
     const others = COUNTRIES.filter((c) => c.code !== code)
       // Single-word names avoid ambiguous autocomplete matches.
       .filter((c) => /^[A-Za-z]+$/.test(c.name.en))
-      .map((c) => ({ code: c.code, name: c.name.en }));
-    const row = distances.km[distances.codes.indexOf(code)] ?? [];
-    const neighbours = others.filter((c) => row[distances.codes.indexOf(c.code)] === 0);
+      .map((c) => ({
+        code: c.code,
+        name: c.name.en,
+        km: row[distances.codes.indexOf(c.code)] ?? -1,
+      }));
+    const neighbours = others.filter((c) => c.km === 0);
     await use({ dayNumber, answer: { code, name: nameOf(code) }, neighbours, others });
   },
 });
@@ -83,4 +87,12 @@ export function guessRow(page: Page, name: string) {
   );
 }
 
-export { expect };
+/** Saves values in localStorage before the app's own code runs, on every page load. */
+export async function seedStorage(page: Page, values: Record<string, unknown>) {
+  await page.addInitScript((entries) => {
+    for (const [key, value] of Object.entries(entries))
+      if (localStorage.getItem(key) === null) localStorage.setItem(key, JSON.stringify(value));
+  }, values);
+}
+
+export { expect, type Page };

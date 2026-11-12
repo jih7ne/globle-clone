@@ -23,15 +23,32 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run test:coverage
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: allure-results-vitest
+          path: allure-results
+          retention-days: 7
       - run: npm run build -w @gw/web
       - name: Bundle the Worker
         run: npx wrangler deploy --dry-run --outdir dist
         working-directory: apps/api
 
   e2e:
-    # Browser tests: the production build against a local Worker and database.
+    # Browser tests: the production build against a local Worker and database, one runner
+    # per engine (NFR-10).
     runs-on: ubuntu-latest
     needs: check
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - browser: chromium
+            projects: --project=desktop --project=mobile
+          - browser: firefox
+            projects: --project=firefox
+          - browser: webkit
+            projects: --project=webkit
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -39,16 +56,46 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e
+      - run: npx playwright install --with-deps ${{ matrix.browser }}
+      - run: npm run test:e2e -- ${{ matrix.projects }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: allure-results-${{ matrix.browser }}
+          path: allure-results
+          retention-days: 7
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.browser }}
           path: |
             playwright-report
             test-results
           retention-days: 7
+
+  report:
+    # One Allure report for every test level and browser, downloadable from the run.
+    runs-on: ubuntu-latest
+    needs: [check, e2e]
+    if: always() && needs.check.result != 'skipped'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: allure-results-*
+          path: allure-results
+          merge-multiple: true
+      - run: npx allure generate allure-results
+      - uses: actions/upload-artifact@v4
+        with:
+          name: allure-report
+          path: allure-report
+          retention-days: 30
 
   deploy:
     # Production on master, a Pages preview per pull request (specification, section 9).

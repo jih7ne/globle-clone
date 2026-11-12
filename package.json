@@ -22,6 +22,8 @@
     "test:coverage": "vitest run --coverage",
     "build:geo": "npm run build:data -w @gw/geo",
     "test:e2e": "playwright test",
+    "report": "allure generate allure-results && allure open allure-report",
+    "report:clean": "node -e \"require('fs').rmSync('allure-results',{recursive:true,force:true})\"",
     "feedback": "npm run feedback -w @gw/api"
   },
   "devDependencies": {
@@ -29,6 +31,9 @@
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.65.0",
     "@vitest/coverage-v8": "^4.1.12",
+    "allure": "^3.33.0",
+    "allure-playwright": "^3.14.0",
+    "allure-vitest": "^3.14.0",
     "eslint": "^10.14.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.7",

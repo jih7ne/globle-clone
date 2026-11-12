@@ -15,6 +15,8 @@ export default tseslint.config(
       '.wrangler-e2e',
       'playwright-report',
       'test-results',
+      'allure-results',
+      'allure-report',
     ],
   },
   js.configs.recommended,
