@@ -1,6 +1,38 @@
 import type { Band } from '@gw/shared';
 import type { Trend } from '../lib/game';
 
+/**
+ * Formatters are costly to create (toLocaleString builds a new one on every call, ~0.6 s
+ * per page load on a slow phone): one per locale, created on first use.
+ */
+const formatters = new Map<string, Intl.DateTimeFormat | Intl.NumberFormat>();
+function cached<T extends Intl.DateTimeFormat | Intl.NumberFormat>(key: string, make: () => T): T {
+  let f = formatters.get(key);
+  if (!f) formatters.set(key, (f = make()));
+  return f as T;
+}
+
+/** A YYYY-MM-DD date as a short day, e.g. "Thu, 12 Nov 2026". */
+export function formatDay(locale: string, iso: string): string {
+  const f = cached(
+    `date:${locale}`,
+    () =>
+      new Intl.DateTimeFormat(locale, {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      }),
+  );
+  // Noon local time: the calendar day of a YYYY-MM-DD string, whatever the time zone.
+  return f.format(new Date(`${iso}T12:00:00`));
+}
+
+/** A whole number with the locale's thousands separator. */
+export function formatNumber(locale: string, n: number): string {
+  return cached(`number:${locale}`, () => new Intl.NumberFormat(locale)).format(n);
+}
+
 /** English UI text. Every language (fr.ts) has exactly this shape: see Strings. */
 export const en = {
   lang: 'en' as 'en' | 'fr',
@@ -11,15 +43,7 @@ export const en = {
   expandPanel: 'Expand panel',
   collapsePanel: 'Collapse panel',
   dayLabel: (n: number) => `No. ${String(n).padStart(3, '0')}`,
-  formatDate: (iso: string) => {
-    // Noon local time: the calendar day of a YYYY-MM-DD string, whatever the time zone.
-    return new Date(`${iso}T12:00:00`).toLocaleDateString('en-GB', {
-      weekday: 'short',
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    });
-  },
+  formatDate: (iso: string) => formatDay('en-GB', iso),
 
   intro: 'Find the country.',
   introSub: 'One mystery country a day. The closer you get, the hotter it gets.',
@@ -208,5 +232,5 @@ export const en = {
 export type Strings = typeof en;
 
 function formatKm(km: number): string {
-  return `${km.toLocaleString('en')} km`;
+  return `${formatNumber('en', km)} km`;
 }

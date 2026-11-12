@@ -11,3 +11,5 @@ playwright-report
 test-results
 allure-results
 allure-report
+lighthouse-report
+.lighthouseci

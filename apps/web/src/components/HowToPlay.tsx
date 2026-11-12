@@ -2,8 +2,18 @@ import { useEffect, useRef } from 'react';
 import { BANDS } from '@gw/shared';
 import { useT } from '../i18n/context';
 
-/** FR-15: shown on the first visit, reopenable from the header. */
-export function HowToPlay({ onClose }: { onClose: () => void }) {
+/**
+ * FR-15: shown on the first visit, reopenable from the header. `instant` on page load: its
+ * heading is the first visit's largest text (Lighthouse LCP), and a fade-in would hold it
+ * back until the main thread is free to run the animation.
+ */
+export function HowToPlay({
+  onClose,
+  instant = false,
+}: {
+  onClose: () => void;
+  instant?: boolean;
+}) {
   const { t: en } = useT();
   const startRef = useRef<HTMLButtonElement>(null);
 
@@ -23,7 +33,7 @@ export function HowToPlay({ onClose }: { onClose: () => void }) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="how-to-title"
-        className="slide-in flex max-h-full w-full max-w-3xl flex-col overflow-y-auto border-2 border-ink bg-paper"
+        className={`${instant ? '' : 'slide-in'} flex max-h-full w-full max-w-3xl flex-col overflow-y-auto border-2 border-ink bg-paper`}
       >
         <div className="flex items-start justify-between gap-4 border-b-2 border-ink p-5 sm:p-6">
           <h2 id="how-to-title" className="headline text-6xl sm:text-7xl">

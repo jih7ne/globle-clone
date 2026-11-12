@@ -1,7 +1,7 @@
-import type { Strings } from './en';
+import { formatDay, formatNumber, type Strings } from './en';
 
 const essais = (n: number) => `${n} ${n === 1 ? 'essai' : 'essais'}`;
-const formatKm = (km: number) => `${km.toLocaleString('fr')} km`;
+const formatKm = (km: number) => `${formatNumber('fr', km)} km`;
 
 /** French UI text (FR-13). Same shape as en.ts, enforced by the Strings type. */
 export const fr: Strings = {
@@ -12,13 +12,7 @@ export const fr: Strings = {
   expandPanel: 'Agrandir le panneau',
   collapsePanel: 'Réduire le panneau',
   dayLabel: (n: number) => `N° ${String(n).padStart(3, '0')}`,
-  formatDate: (iso: string) =>
-    new Date(`${iso}T12:00:00`).toLocaleDateString('fr-FR', {
-      weekday: 'short',
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    }),
+  formatDate: (iso: string) => formatDay('fr-FR', iso),
 
   intro: 'Trouvez le pays.',
   introSub: 'Un pays mystère par jour. Plus vous approchez, plus ça chauffe.',

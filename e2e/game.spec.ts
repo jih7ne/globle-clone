@@ -1,7 +1,7 @@
 import { expect, guess, guessRow, startPlaying, test, type Page } from './fixtures';
 
 test.describe('first visit', () => {
-  test('shows How to play once, then remembers it (FR-15) @mobile', async ({ page }) => {
+  test('shows How to play once, then remembers it (FR-15) @mobile @smoke', async ({ page }) => {
     await page.goto('/');
     const dialog = page.getByRole('dialog', { name: /How to play/ });
     await expect(dialog).toBeVisible();
@@ -168,8 +168,19 @@ test.describe('playing', () => {
   });
 });
 
+test.describe('against the real API', () => {
+  test('a guess comes back with its distance @mobile @smoke', async ({ page }) => {
+    // Never record a game: if the guess happens to win, its /finish goes nowhere.
+    await page.route('**/api/finish', (route) => route.abort());
+    await page.goto('/');
+    await startPlaying(page);
+    await guess(page, 'Brazil');
+    await expect(guessRow(page, 'Brazil')).toContainText(/km|Borders it/);
+  });
+});
+
 test.describe('languages', () => {
-  test('switches to French and remembers it (FR-13) @mobile', async ({ page }) => {
+  test('switches to French and remembers it (FR-13) @mobile @smoke', async ({ page }) => {
     await page.goto('/');
     await startPlaying(page);
     await page.getByRole('button', { name: 'Français' }).click();
@@ -199,7 +210,10 @@ test.describe('languages', () => {
 });
 
 test.describe('globe', () => {
-  test('draws the land even when the map code loads slowly @mobile', async ({ page, context }) => {
+  test('draws the land even when the map code loads slowly @mobile @smoke', async ({
+    page,
+    context,
+  }) => {
     // On the live site the worker's import is a network fetch; a slow one once made the
     // worker miss the page's message, and the globe stayed an empty ocean.
     await context.route(/baseGeometry-.*\.js$/, async (route) => {
@@ -213,6 +227,24 @@ test.describe('globe', () => {
     await expect(page.locator('[data-map="ready"]')).toBeAttached({ timeout: 30_000 });
     // Built by the worker, not rescued by the main-thread fallback.
     expect(fallbacks).toEqual([]);
+  });
+
+  test('waits for How to play to close before loading the globe (NFR-06) @mobile @smoke', async ({
+    page,
+  }) => {
+    // The globe costs seconds of work on a slow phone; the first visit's sheet covers it.
+    const heavy: string[] = [];
+    page.on('request', (r) => {
+      if (/Globe-[\w-]+\.js|countries\.geojson/.test(r.url())) heavy.push(r.url());
+    });
+    await page.goto('/');
+    await expect(page.getByRole('dialog', { name: /How to play/ })).toBeVisible();
+    await page.waitForTimeout(2000);
+    expect(heavy).toEqual([]);
+
+    await startPlaying(page);
+    await expect(page.locator('[data-map="ready"]')).toBeAttached({ timeout: 30_000 });
+    expect(heavy.length).toBeGreaterThanOrEqual(2);
   });
 
   test('turns with a drag and zooms with the wheel (FR-08)', async ({ page }) => {

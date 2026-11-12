@@ -111,6 +111,72 @@ test.describe('midnight', () => {
   });
 });
 
+test.describe('midnight during a game', () => {
+  test.use({ timezoneId: 'Etc/GMT+12' });
+
+  test('a game in progress keeps yesterday’s country until the page reloads', async ({ page }) => {
+    const now = Date.now();
+    const untilMidnight = DAY - ((now - 12 * HOUR) % DAY);
+    test.skip(untilMidnight < 2 * 60_000, 'too close to the real UTC−12 midnight');
+
+    await page.clock.install({ time: now });
+    await page.goto('/');
+    await startPlaying(page);
+    const dayLabel = page.getByText(/^No\. \d{3}$/);
+    const firstDay = await dayLabel.textContent();
+    await guess(page, 'Brazil');
+    test.skip(
+      await page.getByText('Next country in').isVisible(),
+      'Brazil is today’s answer: the game is over',
+    );
+
+    await page.clock.fastForward(untilMidnight + 60_000);
+    // Rule 5 as built: the open game carries on (the server still accepts its date).
+    await guess(page, 'Japan');
+    await expect(dayLabel).toHaveText(firstDay!);
+
+    // A reload starts the new day's game; the unfinished one is not counted.
+    await page.reload();
+    await expect(dayLabel).not.toHaveText(firstDay!);
+    await expect(page.getByRole('region', { name: /guess/ })).toHaveCount(0);
+    await page.getByRole('button', { name: 'Stats' }).click();
+    await expect(page.getByText('Played').locator('..')).toContainText('0');
+  });
+
+  test('a guess the server calls expired moves on to the new day', async ({ page }) => {
+    const now = Date.now();
+    const untilMidnight = DAY - ((now - 12 * HOUR) % DAY);
+    test.skip(untilMidnight < 2 * 60_000, 'too close to the real UTC−12 midnight');
+
+    await page.clock.install({ time: now });
+    await page.goto('/');
+    await startPlaying(page);
+    const dayLabel = page.getByText(/^No\. \d{3}$/);
+    const firstDay = Number((await dayLabel.textContent())?.slice(4));
+    await guess(page, 'Brazil');
+    test.skip(
+      await page.getByText('Next country in').isVisible(),
+      'Brazil is today’s answer: the game is over',
+    );
+
+    // Hours later, yesterday's date is no longer current anywhere: the Worker answers
+    // token_expired (NFR-03). Only the clock of the real Worker can't be faked here.
+    await page.clock.fastForward(untilMidnight + 60_000);
+    await page.route('**/api/guess', (route) =>
+      route.fulfill({ status: 401, json: { error: 'token_expired' } }),
+    );
+    const input = page.getByRole('combobox', { name: 'Guess a country' });
+    await input.fill('Japan');
+    await input.press('Escape');
+    await input.press('Enter');
+
+    await expect(dayLabel).toHaveText(`No. ${String(firstDay + 1).padStart(3, '0')}`);
+    await expect(page.getByRole('region', { name: /guess/ })).toHaveCount(0);
+    await expect(page.getByRole('alert')).toHaveCount(0);
+    await expect(input).toBeEnabled();
+  });
+});
+
 test.describe('streaks (FR-16)', () => {
   test('a missed day breaks the current streak but keeps the best one', async ({ page, today }) => {
     const date = await page.evaluate(() => {

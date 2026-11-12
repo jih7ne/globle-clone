@@ -3,6 +3,9 @@
 A daily geography game: find the mystery country, guided only by how far each guess is from it. Inspired by [Globle](https://globle-game.com), with its own design.
 
 [![CI](https://github.com/jih7ne/globle-clone/actions/workflows/ci.yml/badge.svg)](https://github.com/jih7ne/globle-clone/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/jih7ne/globle-clone/badges/coverage.json)](TEST_STRATEGY.md)
+[![Lighthouse mobile](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/jih7ne/globle-clone/badges/lighthouse-performance.json)](TEST_STRATEGY.md)
+[![Accessibility](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/jih7ne/globle-clone/badges/lighthouse-accessibility.json)](TEST_STRATEGY.md)
 
 **Play it: https://getting-warmer.pages.dev** (No. 001 was 11 November 2026).
 
@@ -57,6 +60,7 @@ The answer is never sent before a win or give-up, and results are read from the 
 | `npm run test:e2e`      | Playwright: builds the site, starts a local Worker and database |
 | `npm run test:coverage` | Tests with coverage (85% threshold)                             |
 | `npm run report`        | Allure report of the last Vitest and Playwright runs            |
+| `npm run lighthouse`    | Lighthouse CI on the running E2E site (mobile, 3 runs, asserts) |
 | `npm run lint`          | ESLint                                                          |
 | `npm run typecheck`     | TypeScript in every workspace                                   |
 | `npm run format`        | Prettier                                                        |

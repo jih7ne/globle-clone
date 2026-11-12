@@ -24,11 +24,13 @@
     "test:e2e": "playwright test",
     "report": "allure generate allure-results && allure open allure-report",
     "report:clean": "node -e \"require('fs').rmSync('allure-results',{recursive:true,force:true})\"",
+    "lighthouse": "lhci collect && lhci assert",
     "feedback": "npm run feedback -w @gw/api"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",
     "@eslint/js": "^10.0.1",
+    "@lhci/cli": "^0.16.1",
     "@playwright/test": "^1.65.0",
     "@vitest/coverage-v8": "^4.1.12",
     "allure": "^3.33.0",

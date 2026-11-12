@@ -7,6 +7,8 @@ export default defineConfig({
     reporters: ['default', ['allure-vitest/reporter', { resultsDir: 'allure-results' }]],
     coverage: {
       provider: 'v8',
+      // json-summary feeds the README coverage badge (CI, badges job).
+      reporter: ['text', 'html', 'json-summary'],
       include: [
         'packages/*/src/**',
         'apps/api/src/**',

@@ -21,9 +21,11 @@ export interface Today {
 }
 
 export const test = base.extend<{ today: Today }>({
-  // Each test counts as its own IP for the API's rate limiter (60 requests a minute).
+  // Each test counts as its own IP for the local API's rate limiter (60 requests a minute).
+  // Not on a deployed site: Cloudflare sets this header itself.
   context: async ({ context }, use) => {
-    await context.setExtraHTTPHeaders({ 'CF-Connecting-IP': `10.0.${rand()}.${rand()}` });
+    if (!process.env.E2E_BASE_URL)
+      await context.setExtraHTTPHeaders({ 'CF-Connecting-IP': `10.0.${rand()}.${rand()}` });
     await use(context);
   },
 

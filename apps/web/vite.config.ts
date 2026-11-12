@@ -6,8 +6,18 @@ import tailwindcss from '@tailwindcss/vite';
 // Forward API calls to the local Worker (`npm run dev:api`); E2E tests point it elsewhere.
 const proxy = { '/api': process.env.API_URL ?? 'http://localhost:8787' };
 
+/** Unused parts of the globe libraries, replaced by small stubs (see src/stubs/unused.ts). */
+const stub = (file: string) => fileURLToPath(new URL(`src/stubs/${file}`, import.meta.url));
+
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  resolve: {
+    alias: [
+      { find: /^three\/webgpu$/, replacement: stub('three-webgpu.ts') },
+      { find: /^three\/tsl$/, replacement: stub('three-tsl.ts') },
+      { find: /^h3-js$/, replacement: stub('h3.ts') },
+    ],
+  },
   server: { proxy },
   preview: { proxy },
   // The map worker (lib/baseLayer.worker.ts) uses top-level await and dynamic imports.

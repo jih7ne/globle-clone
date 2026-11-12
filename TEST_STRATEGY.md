@@ -6,15 +6,16 @@ How Getting Warmer is tested, why, and what is not covered yet. The plan comes f
 
 A daily guessing game fails in a few specific ways. Each one has tests aimed at it.
 
-| Risk                                                       | Why it matters                                           | Main defence                                                                      |
-| ---------------------------------------------------------- | -------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| Wrong distances (islands, enclaves, antimeridian, straits) | The whole game is "how far am I": one bad pair ruins it  | Data tests on all 195 × 195 distances; property tests on the distance function    |
-| The answer leaks before the game ends                      | Anyone could read it from the network tab or bundle      | Signed tokens that never hold the answer; Playwright scan of every response       |
-| Dates and time zones (players from UTC−12 to UTC+14)       | Two players on the same local date must get one country  | Unit tests on the day number and the accepted date window, to the minute          |
-| Faked global stats                                         | A script could post fake wins                            | `/finish` reads the result from the signed token; one finish per session and date |
-| Broken map geometry                                        | Wrong winding froze the page for 73 s once               | Winding unit tests and a data test on every shape                                 |
-| Name matching (accents, aliases, typos, two languages)     | Players type "Côte d'Ivoire", "ivory coast", "Allemagne" | Unit and property tests on normalisation, aliases and "Did you mean?"             |
-| Accessibility regressions                                  | Colour is the main signal of the game                    | axe on every screen, keyboard-only E2E, band names next to every colour           |
+| Risk                                                       | Why it matters                                           | Main defence                                                                       |
+| ---------------------------------------------------------- | -------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Wrong distances (islands, enclaves, antimeridian, straits) | The whole game is "how far am I": one bad pair ruins it  | Data tests on all 195 × 195 distances; property tests on the distance function     |
+| The answer leaks before the game ends                      | Anyone could read it from the network tab or bundle      | Signed tokens that never hold the answer; Playwright scan of every response        |
+| Dates and time zones (players from UTC−12 to UTC+14)       | Two players on the same local date must get one country  | Unit tests on the day number and the accepted date window, to the minute           |
+| Faked global stats                                         | A script could post fake wins                            | `/finish` reads the result from the signed token; one finish per session and date  |
+| Broken map geometry                                        | Wrong winding froze the page for 73 s once               | Winding unit tests and a data test on every shape                                  |
+| Name matching (accents, aliases, typos, two languages)     | Players type "Côte d'Ivoire", "ivory coast", "Allemagne" | Unit and property tests on normalisation, aliases and "Did you mean?"              |
+| Accessibility regressions                                  | Colour is the main signal of the game                    | axe on every screen, keyboard-only E2E, band names next to every colour            |
+| A slow first load on phones                                | Players leave before the globe appears                   | Lighthouse CI blocks the deploy under 85; E2E checks the globe waits for the rules |
 
 ## Levels
 
@@ -28,8 +29,11 @@ A daily guessing game fails in a few specific ways. Each one has tests aimed at 
 | Time              | Playwright fake clock and time zones         | `e2e/clock.spec.ts`                                                |
 | Security          | Playwright, network interception             | `e2e/anti-cheat.spec.ts`                                           |
 | Accessibility     | axe-core through Playwright                  | `e2e/a11y.spec.ts`                                                 |
+| Smoke             | Playwright tests tagged `@smoke`, deployed   | the Pages preview of a pull request, or production after a deploy  |
+| Performance       | Lighthouse CI (mobile, median of 3 runs)     | `lighthouserc.json`, CI job `lighthouse`                           |
+| Load              | k6                                           | `perf/api.k6.js`, workflow `load.yml` (weekly and on demand)       |
 
-286 Vitest tests in total, coverage about 99.8% of lines on the covered game logic (CI fails under 85%). The 25 E2E tests run on Chromium, Firefox and WebKit on desktop, and the tests tagged `@mobile` also on a Pixel 7: 82 runs in all, one CI runner per engine.
+286 Vitest tests in total, coverage about 99.8% of lines on the covered game logic (CI fails under 85%). The 29 E2E tests run on Chromium, Firefox and WebKit on desktop, and the tests tagged `@mobile` also on a Pixel 7: 96 runs in all, one CI runner per engine. After each deploy, the 5 tests tagged `@smoke` run again on the deployed site, desktop and phone.
 
 Every result, from both Vitest and Playwright, goes into one [Allure](https://allurereport.org) report (see below).
 
@@ -50,7 +54,7 @@ E2E tests use a unique `CF-Connecting-IP` per test so the rate limiter does not 
 | FR-09 Win postcard                     | `game.spec.ts`                                                                                     |
 | FR-10 Give up                          | `app.test.ts`; `game.spec.ts`; `anti-cheat.spec.ts`                                                |
 | FR-11 Resume after reload              | `game.spec.ts`                                                                                     |
-| FR-12 Countdown                        | `date.test.ts` (23- and 25-hour days); `clock.spec.ts` (ticking, DST days, midnight rollover)      |
+| FR-12 Countdown                        | `date.test.ts` (23- and 25-hour days); `clock.spec.ts` (ticking, DST days, midnight, mid-game)     |
 | FR-13 English / French                 | `i18n.test.ts` (same keys, everything translated), `share.test.ts`; `game.spec.ts` (2)             |
 | FR-14 Dark mode                        | Not built                                                                                          |
 | FR-15 How to play on first visit       | `game.spec.ts`                                                                                     |
@@ -65,8 +69,8 @@ E2E tests use a unique `CF-Connecting-IP` per test so the rate limiter does not 
 | NFR-02 Secret daily pick               | `daily.test.ts` (order changes with the secret and the cycle)                                      |
 | NFR-03 Date window UTC−12 … UTC+14     | `dates.test.ts`, `app.test.ts`                                                                     |
 | NFR-04 Rate limit                      | `app.test.ts` (fake limiter: key is the IP, 429 with Retry-After)                                  |
-| NFR-05 API p95 < 200 ms                | Not measured yet (k6 planned on the deployed API)                                                  |
-| NFR-06 Lighthouse ≥ 85, GeoJSON < 1 MB | GeoJSON size in `data.test.ts`; Lighthouse run by hand, see below                                  |
+| NFR-05 API p95 < 200 ms                | `api.k6.js`: production at a pace under the rate limit; 50 concurrent players on a local Worker    |
+| NFR-06 Lighthouse ≥ 85, GeoJSON < 1 MB | GeoJSON size in `data.test.ts`; Lighthouse CI (blocks the deploy); `game.spec.ts` (globe deferred) |
 | NFR-07 API down                        | `app.test.ts` (D1 unavailable); `game.spec.ts` (offline message, game kept, Try again)             |
 | NFR-09 Accessibility                   | `a11y.spec.ts` (axe, every screen, desktop and mobile); keyboard-only `game.spec.ts`               |
 | NFR-10 Browsers, 360 px                | Whole E2E suite on Chromium, Firefox and WebKit; Pixel 7 for `@mobile` tests                       |
@@ -78,10 +82,9 @@ E2E tests use a unique `CF-Connecting-IP` per test so the rate limiter does not 
 Honest gaps against section 10 of the specification:
 
 - **Edge:** not run separately; it shares Chromium's engine.
-- **A game in progress at midnight:** the rollover E2E test covers a finished game (the countdown). A game still in progress moves on at its next guess (`token_expired`), which is tested in `app.test.ts` but not in the browser.
-- **Lighthouse CI:** measured by hand, not yet in CI. On the live site (mobile, 11 November 2026): performance 83–85 with the CPU slowdown calibrated for the test laptop, 74 with the default 4× slowdown; accessibility, best practices and SEO 100. The 3D globe library is the main remaining cost.
-- **k6 load test** for NFR-05: needs the deployed API.
-- **E2E on the Pages preview:** E2E runs against a local build and Worker in CI; previews are deployed but not tested.
+- **50 concurrent players on Cloudflare:** production allows 60 requests a minute per IP, so a load test from one machine can only measure latency at a gentle pace. The 50-user run uses a local Worker: it checks the code under concurrency, not Cloudflare's network. A staging Worker without the limit would close this gap.
+- **Lighthouse measures a first visit:** a fresh browser always sees How to play, and the globe waits for it to close. A returning player loads the globe straight after the first paint; that path is not scored.
+- **Smoke tests on deployed sites** run on the production API, so they cannot win on purpose: no test secret exists there. The full suite runs only on the local build.
 
 ## Bugs found, and the tests that now guard them
 
@@ -94,6 +97,7 @@ Kept as raw material for the write-up.
 - **Globe hidden behind the panel on phones:** the mobile panel was laid over the globe, covering its centre. Reported by the owner. The panel now sits below the globe; an E2E test on the phone project checks the globe box ends where the panel starts (fails on the old layout).
 - **Brittle row lookup in E2E:** the helper matched a country name in the row's raw text with no letter after it; "Borders it" made the text "ArgentinaBorders it". It now matches the name's own element exactly.
 - **Language button failing axe:** visible "FR" but accessible name "Français" (`label-content-name-mismatch`).
+- **Lighthouse mobile 38 on the live site** (12 November 2026, default 4× slowdown, no GPU). Four causes, found with Lighthouse and a CPU profile: the globe library bundled a WebGPU renderer and the h3 hexagon library it never used here (880 KB of a 2 MB chunk, now stubbed out); every render built new date and number formatters (~0.6 s); the How to play heading faded in, so the first visit's largest text waited for a busy main thread; and the globe loaded and drew under that sheet. Now the median of 3 runs is 95–98 on the same machine. Lighthouse CI blocks a deploy under 85, and an E2E test checks the globe waits for the sheet to close.
 
 ## Running the tests
 
@@ -111,3 +115,9 @@ npm run report           # builds the Allure report from both runners and opens 
 ```
 
 In CI, each run uploads an `allure-report` artifact that combines the Vitest job and the three browser jobs.
+
+```sh
+npm run lighthouse       # with the E2E site running (npm run test:e2e starts it): 3 mobile runs, asserts
+E2E_BASE_URL=https://getting-warmer.pages.dev npm run test:e2e   # smoke tests on a deployed site
+k6 run perf/api.k6.js    # production latency; see the file for the local 50-user run
+```

@@ -1,0 +1,56 @@
+name: Load test
+
+# NFR-05: API p95 under 200 ms (perf/api.k6.js). Weekly, and on demand from the Actions tab.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * 1'
+
+jobs:
+  production:
+    # Real latency of the deployed API, from one IP: paced under the 60 requests a minute
+    # rate limit (NFR-04). /start and /guess never write to the database.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: grafana/setup-k6-action@v1
+      - run: k6 run --summary-export=summary-production.json perf/api.k6.js
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: k6-production
+          path: summary-production.json
+          retention-days: 30
+
+  concurrent:
+    # 50 simultaneous players (specification, section 10) on a local Worker, which trusts a
+    # per-request IP header so the rate limiter does not interfere. Checks the code under
+    # concurrency, not Cloudflare's network.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - uses: grafana/setup-k6-action@v1
+      - name: Start the local Worker
+        working-directory: apps/api
+        run: |
+          npx wrangler d1 migrations apply getting-warmer --local --persist-to ../../.wrangler-k6
+          (npx wrangler dev --port 8788 --persist-to ../../.wrangler-k6 \
+            --var SECRET:k6-secret --var TOKEN_KEY:k6-token-key > ../../worker.log 2>&1 &)
+          for i in $(seq 60); do curl -sf http://localhost:8788/api/health && exit 0; sleep 2; done
+          cat ../../worker.log
+          exit 1
+      - run: k6 run --summary-export=summary-concurrent.json perf/api.k6.js
+        env:
+          BASE_URL: http://localhost:8788
+          LOCAL: '1'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: k6-concurrent
+          path: summary-concurrent.json
+          retention-days: 30

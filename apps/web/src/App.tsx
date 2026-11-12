@@ -81,15 +81,22 @@ export function App() {
   const index = useMemo(() => buildIndex(COUNTRIES, lang), [lang]);
   const [geo, setGeo] = useState<GeoData | null>(null);
   const [showHowTo, setShowHowTo] = useState(() => !readJson<boolean>(KEYS.seenHowTo));
+  // Opened with the page on a first visit (no animation), or later from the menu.
+  const [howToOnLoad, setHowToOnLoad] = useState(showHowTo);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const reducedMotion = usePrefersReducedMotion();
 
+  // The globe (three.js, ~300 KB gzipped, seconds of work on a slow phone) starts loading
+  // after the first paint (effects run after it), and on a first visit only once How to
+  // play is closed: the sheet covers it, and the rules stay responsive (Lighthouse, NFR-06).
+  const [globeWanted, setGlobeWanted] = useState(!showHowTo);
   useEffect(() => {
-    loadGeo().then(setGeo, (err: unknown) => console.error(err));
-  }, []);
+    if (globeWanted) loadGeo().then(setGeo, (err: unknown) => console.error(err));
+  }, [globeWanted]);
 
   const closeHowTo = useCallback(() => {
     setShowHowTo(false);
+    setGlobeWanted(true);
     writeJson(KEYS.seenHowTo, true);
   }, []);
 
@@ -150,7 +157,11 @@ export function App() {
         <button
           key={key}
           type="button"
-          onClick={() => (key === 'howto' ? setShowHowTo(true) : setPanel(key))}
+          onClick={() => {
+            if (key !== 'howto') return setPanel(key);
+            setHowToOnLoad(false);
+            setShowHowTo(true);
+          }}
           className="px-2 py-1 uppercase not-first:border-l-2 not-first:border-ink hover:bg-ink hover:text-paper"
         >
           {key === 'howto' ? (
@@ -304,7 +315,7 @@ export function App() {
         </div>
       </aside>
 
-      {showHowTo && <HowToPlay onClose={closeHowTo} />}
+      {showHowTo && <HowToPlay onClose={closeHowTo} instant={howToOnLoad} />}
       {panel === 'stats' && (
         <StatsPanel
           stats={stats}

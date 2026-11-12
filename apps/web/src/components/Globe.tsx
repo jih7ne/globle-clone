@@ -14,6 +14,11 @@ const RING = '#f7f4ee';
 const oceanMaterial = new MeshBasicMaterial({ color: OCEAN });
 /** How long the globe keeps drawing after the last movement or interaction. */
 const IDLE_MS = 1500;
+/**
+ * Frames drawn when the globe or its land first appears: nothing moves then, so a few
+ * frames are enough. Without a GPU every frame is drawn in software and blocks the page.
+ */
+const SETTLE_MS = 300;
 const ACTIVITY_EVENTS = ['pointerdown', 'pointermove', 'wheel', 'touchstart'] as const;
 /** Guessed countries sit raised above the flat map. */
 const GUESSED_ALTITUDE = LAND_ALTITUDE + 0.008;
@@ -77,7 +82,7 @@ export default function Globe({ geo, colors, labels, focus, answer, reducedMotio
     // Dragging, zooming and hovering (country tooltips) all need live frames.
     const onActivity = () => awake();
     for (const e of ACTIVITY_EVENTS) el.addEventListener(e, onActivity, { passive: true });
-    awake(3 * IDLE_MS); // first frames, while the map appears
+    awake(SETTLE_MS); // first frames
     return () => {
       clearTimeout(timer);
       for (const e of ACTIVITY_EVENTS) el.removeEventListener(e, onActivity);
@@ -130,7 +135,7 @@ export default function Globe({ geo, colors, labels, focus, answer, reducedMotio
     const base = createBaseLayer(buffers, { land: LAND, disputed: LAND_DISPUTED, border: BORDER });
     scene.add(base);
     setMapReady(true);
-    wake.current();
+    wake.current(SETTLE_MS);
     return () => {
       setMapReady(false);
       scene.remove(base);
