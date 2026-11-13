@@ -25,7 +25,8 @@ export default defineConfig({
   reporter: [
     ['list'],
     ['allure-playwright', { resultsDir: 'allure-results' }],
-    ...(process.env.CI ? [['html', { open: 'never' }] as const] : []),
+    // On CI, failures also become annotations: readable on the run page and from the API.
+    ...(process.env.CI ? [['html', { open: 'never' }] as const, ['github'] as const] : []),
   ],
   timeout: 60_000,
   expect: { timeout: 10_000 },
