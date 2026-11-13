@@ -19,6 +19,10 @@ async function audit(page: Page, screen: string) {
   ).toEqual([]);
 }
 
+// Axe reads colours as they are at that instant: mid fade-in, text is half transparent and
+// fails contrast (seen on a slow WebKit runner). With reduced motion it sees the final colours.
+test.use({ reducedMotion: 'reduce' });
+
 test('no critical or serious accessibility violations on any screen @mobile', async ({
   page,
   today,

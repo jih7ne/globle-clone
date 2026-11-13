@@ -151,7 +151,8 @@ test.describe('playing', () => {
 
   test('can be played with the keyboard only (NFR-09)', async ({ page, today }) => {
     await page.goto('/');
-    await page.keyboard.press('Enter'); // "Start playing" has focus
+    await expect(page.getByRole('button', { name: /Start playing/ })).toBeFocused();
+    await page.keyboard.press('Enter');
     await expect(page.getByRole('dialog')).toBeHidden();
     const input = page.getByRole('combobox', { name: 'Guess a country' });
     await input.focus();
