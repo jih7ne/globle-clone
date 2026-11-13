@@ -97,4 +97,14 @@ export async function seedStorage(page: Page, values: Record<string, unknown>) {
   }, values);
 }
 
+/**
+ * Skips a test that needs the real globe when the browser has no WebGL: Firefox on a
+ * Linux CI runner has none, even forced. Chromium and WebKit still run these tests, and
+ * the game without a globe has its own test.
+ */
+export async function needsWebGL(page: Page) {
+  const ok = await page.evaluate(() => !!document.createElement('canvas').getContext('webgl'));
+  test.skip(!ok, 'no WebGL in this browser: the globe cannot be drawn');
+}
+
 export { expect, type Page };

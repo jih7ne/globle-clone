@@ -1,4 +1,4 @@
-import { expect, guess, guessRow, startPlaying, test, type Page } from './fixtures';
+import { expect, guess, guessRow, needsWebGL, startPlaying, test, type Page } from './fixtures';
 
 test.describe('first visit', () => {
   test('shows How to play once, then remembers it (FR-15) @mobile @smoke', async ({ page }) => {
@@ -223,6 +223,7 @@ test.describe('globe', () => {
     const fallbacks: string[] = [];
     page.on('console', (m) => m.text().includes('Map worker failed') && fallbacks.push(m.text()));
     await page.goto('/');
+    await needsWebGL(page);
     await startPlaying(page);
     await expect(page.locator('[data-map="ready"]')).toBeAttached({ timeout: 30_000 });
     // Built by the worker, not rescued by the main-thread fallback.
@@ -238,6 +239,7 @@ test.describe('globe', () => {
       if (/Globe-[\w-]+\.js|countries\.geojson/.test(r.url())) heavy.push(r.url());
     });
     await page.goto('/');
+    await needsWebGL(page);
     await expect(page.getByRole('dialog', { name: /How to play/ })).toBeVisible();
     await page.waitForTimeout(2000);
     expect(heavy).toEqual([]);
@@ -268,6 +270,7 @@ test.describe('globe', () => {
 
   test('turns with a drag and zooms with the wheel (FR-08)', async ({ page }) => {
     await page.goto('/');
+    await needsWebGL(page);
     await startPlaying(page);
     await expect(page.locator('[data-map="ready"]')).toBeAttached({ timeout: 30_000 });
     const canvas = page.locator('main canvas');
