@@ -247,6 +247,25 @@ test.describe('globe', () => {
     expect(heavy.length).toBeGreaterThanOrEqual(2);
   });
 
+  test('the game stays playable when the browser has no WebGL (NFR-10) @mobile', async ({
+    page,
+    today,
+  }) => {
+    // WebGL disabled, blocklisted or unavailable (a CI runner's Firefox): three.js throws
+    // while creating its renderer. Only the globe may go; the game must stay.
+    await page.addInitScript(() => {
+      const getContext = HTMLCanvasElement.prototype.getContext;
+      HTMLCanvasElement.prototype.getContext = function (this: HTMLCanvasElement, ...args) {
+        return /webgl/i.test(String(args[0])) ? null : getContext.apply(this, args);
+      } as typeof getContext;
+    });
+    await page.goto('/');
+    await startPlaying(page);
+    await expect(page.getByText(/globe can’t be shown/)).toBeVisible({ timeout: 30_000 });
+    await guess(page, today.answer.name);
+    await expect(page.getByText('Next country in')).toBeVisible();
+  });
+
   test('turns with a drag and zooms with the wheel (FR-08)', async ({ page }) => {
     await page.goto('/');
     await startPlaying(page);

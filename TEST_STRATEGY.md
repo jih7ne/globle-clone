@@ -33,7 +33,7 @@ A daily guessing game fails in a few specific ways. Each one has tests aimed at 
 | Performance       | Lighthouse CI (mobile, median of 3 runs)     | `lighthouserc.json`, CI job `lighthouse`                           |
 | Load              | k6                                           | `perf/api.k6.js`, workflow `load.yml` (weekly and on demand)       |
 
-286 Vitest tests in total, coverage about 99.8% of lines on the covered game logic (CI fails under 85%). The 29 E2E tests run on Chromium, Firefox and WebKit on desktop, and the tests tagged `@mobile` also on a Pixel 7: 96 runs in all, one CI runner per engine. After each deploy, the 5 tests tagged `@smoke` run again on the deployed site, desktop and phone.
+286 Vitest tests in total, coverage about 99.8% of lines on the covered game logic (CI fails under 85%). The 30 E2E tests run on Chromium, Firefox and WebKit on desktop, and the tests tagged `@mobile` also on a Pixel 7: 100 runs in all, one CI runner per engine. After each deploy, the 5 tests tagged `@smoke` run again on the deployed site, desktop and phone.
 
 Every result, from both Vitest and Playwright, goes into one [Allure](https://allurereport.org) report (see below).
 
@@ -41,41 +41,41 @@ E2E tests use a unique `CF-Connecting-IP` per test so the rate limiter does not 
 
 ## Requirements traceability
 
-| Requirement                            | Tests                                                                                              |
-| -------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| FR-01 Daily country, same for all      | `daily.test.ts` (shuffle without repeats per cycle, stable per day), `dates.test.ts`               |
-| FR-02 Autocomplete, case, accents      | `match.test.ts`, `names.test.ts`                                                                   |
-| FR-03 Alternative names                | `match.test.ts` (property: every name and alias matches its country); E2E French browser           |
-| FR-04 Unknown / repeated country       | `app.test.ts` (400, 409); `game.spec.ts`                                                           |
-| FR-05 Border-to-border distance        | `distance.test.ts`, `data.test.ts`, `app.test.ts`                                                  |
-| FR-06 Colour by distance               | `bands.test.ts` (bounds and continuous scale)                                                      |
-| FR-07 Two list views                   | `game.test.ts` (ranking, ties, property); `game.spec.ts` (row order in both views)                 |
-| FR-08 Rotate and zoom                  | `game.spec.ts` (the globe image changes after a drag, then after a wheel zoom)                     |
-| FR-09 Win postcard                     | `game.spec.ts`                                                                                     |
-| FR-10 Give up                          | `app.test.ts`; `game.spec.ts`; `anti-cheat.spec.ts`                                                |
-| FR-11 Resume after reload              | `game.spec.ts`                                                                                     |
-| FR-12 Countdown                        | `date.test.ts` (23- and 25-hour days); `clock.spec.ts` (ticking, DST days, midnight, mid-game)     |
-| FR-13 English / French                 | `i18n.test.ts` (same keys, everything translated), `share.test.ts`; `game.spec.ts` (2)             |
-| FR-14 Dark mode                        | Not built                                                                                          |
-| FR-15 How to play on first visit       | `game.spec.ts`                                                                                     |
-| FR-16 Personal stats                   | `stats.test.ts` (streaks, distribution, missed days); `game.spec.ts`; `clock.spec.ts` (missed day) |
-| FR-17 Share                            | `share.test.ts` (exact format, no country names); `game.spec.ts`                                   |
-| FR-18 Global stats                     | `stats.test.ts` (API), `app.test.ts`                                                               |
-| FR-19 Export / import stats            | Not built                                                                                          |
-| FR-20 About page                       | Covered by the axe run on every screen                                                             |
-| FR-21 Gauge and trend message          | `game.test.ts` (trend vs best guess, ties, property); `game.spec.ts` (messages, arrows, neighbour) |
-| FR-22 "Did you mean?"                  | `match.test.ts` (thresholds, ties, swapped letters); `game.spec.ts`                                |
-| NFR-01 No answer leak                  | `app.test.ts` (token content); `anti-cheat.spec.ts` (every response before give-up)                |
-| NFR-02 Secret daily pick               | `daily.test.ts` (order changes with the secret and the cycle)                                      |
-| NFR-03 Date window UTC−12 … UTC+14     | `dates.test.ts`, `app.test.ts`                                                                     |
-| NFR-04 Rate limit                      | `app.test.ts` (fake limiter: key is the IP, 429 with Retry-After)                                  |
-| NFR-05 API p95 < 200 ms                | `api.k6.js`: production at a pace under the rate limit; 50 concurrent players on a local Worker    |
-| NFR-06 Lighthouse ≥ 85, GeoJSON < 1 MB | GeoJSON size in `data.test.ts`; Lighthouse CI (blocks the deploy); `game.spec.ts` (globe deferred) |
-| NFR-07 API down                        | `app.test.ts` (D1 unavailable); `game.spec.ts` (offline message, game kept, Try again)             |
-| NFR-09 Accessibility                   | `a11y.spec.ts` (axe, every screen, desktop and mobile); keyboard-only `game.spec.ts`               |
-| NFR-10 Browsers, 360 px                | Whole E2E suite on Chromium, Firefox and WebKit; Pixel 7 for `@mobile` tests                       |
-| NFR-12 Coverage ≥ 85%, CI blocks       | Coverage threshold in `vitest.config.ts`; CI on every push and pull request                        |
-| NFR-14 Stats integrity                 | `app.test.ts` (client claims ignored, one finish per session, suspect flag), `token.test.ts`       |
+| Requirement                            | Tests                                                                                                |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| FR-01 Daily country, same for all      | `daily.test.ts` (shuffle without repeats per cycle, stable per day), `dates.test.ts`                 |
+| FR-02 Autocomplete, case, accents      | `match.test.ts`, `names.test.ts`                                                                     |
+| FR-03 Alternative names                | `match.test.ts` (property: every name and alias matches its country); E2E French browser             |
+| FR-04 Unknown / repeated country       | `app.test.ts` (400, 409); `game.spec.ts`                                                             |
+| FR-05 Border-to-border distance        | `distance.test.ts`, `data.test.ts`, `app.test.ts`                                                    |
+| FR-06 Colour by distance               | `bands.test.ts` (bounds and continuous scale)                                                        |
+| FR-07 Two list views                   | `game.test.ts` (ranking, ties, property); `game.spec.ts` (row order in both views)                   |
+| FR-08 Rotate and zoom                  | `game.spec.ts` (the globe image changes after a drag, then after a wheel zoom)                       |
+| FR-09 Win postcard                     | `game.spec.ts`                                                                                       |
+| FR-10 Give up                          | `app.test.ts`; `game.spec.ts`; `anti-cheat.spec.ts`                                                  |
+| FR-11 Resume after reload              | `game.spec.ts`                                                                                       |
+| FR-12 Countdown                        | `date.test.ts` (23- and 25-hour days); `clock.spec.ts` (ticking, DST days, midnight, mid-game)       |
+| FR-13 English / French                 | `i18n.test.ts` (same keys, everything translated), `share.test.ts`; `game.spec.ts` (2)               |
+| FR-14 Dark mode                        | Not built                                                                                            |
+| FR-15 How to play on first visit       | `game.spec.ts`                                                                                       |
+| FR-16 Personal stats                   | `stats.test.ts` (streaks, distribution, missed days); `game.spec.ts`; `clock.spec.ts` (missed day)   |
+| FR-17 Share                            | `share.test.ts` (exact format, no country names); `game.spec.ts`                                     |
+| FR-18 Global stats                     | `stats.test.ts` (API), `app.test.ts`                                                                 |
+| FR-19 Export / import stats            | Not built                                                                                            |
+| FR-20 About page                       | Covered by the axe run on every screen                                                               |
+| FR-21 Gauge and trend message          | `game.test.ts` (trend vs best guess, ties, property); `game.spec.ts` (messages, arrows, neighbour)   |
+| FR-22 "Did you mean?"                  | `match.test.ts` (thresholds, ties, swapped letters); `game.spec.ts`                                  |
+| NFR-01 No answer leak                  | `app.test.ts` (token content); `anti-cheat.spec.ts` (every response before give-up)                  |
+| NFR-02 Secret daily pick               | `daily.test.ts` (order changes with the secret and the cycle)                                        |
+| NFR-03 Date window UTC−12 … UTC+14     | `dates.test.ts`, `app.test.ts`                                                                       |
+| NFR-04 Rate limit                      | `app.test.ts` (fake limiter: key is the IP, 429 with Retry-After)                                    |
+| NFR-05 API p95 < 200 ms                | `api.k6.js`: production at a pace under the rate limit; 50 concurrent players on a local Worker      |
+| NFR-06 Lighthouse ≥ 85, GeoJSON < 1 MB | GeoJSON size in `data.test.ts`; Lighthouse CI (blocks the deploy); `game.spec.ts` (globe deferred)   |
+| NFR-07 API down                        | `app.test.ts` (D1 unavailable); `game.spec.ts` (offline message, game kept, Try again)               |
+| NFR-09 Accessibility                   | `a11y.spec.ts` (axe, every screen, desktop and mobile); keyboard-only `game.spec.ts`                 |
+| NFR-10 Browsers, 360 px                | Whole E2E suite on Chromium, Firefox and WebKit; Pixel 7 for `@mobile` tests; playable without WebGL |
+| NFR-12 Coverage ≥ 85%, CI blocks       | Coverage threshold in `vitest.config.ts`; CI on every push and pull request                          |
+| NFR-14 Stats integrity                 | `app.test.ts` (client claims ignored, one finish per session, suspect flag), `token.test.ts`         |
 
 ## Not covered yet
 
@@ -98,6 +98,7 @@ Kept as raw material for the write-up.
 - **Brittle row lookup in E2E:** the helper matched a country name in the row's raw text with no letter after it; "Borders it" made the text "ArgentinaBorders it". It now matches the name's own element exactly.
 - **Language button failing axe:** visible "FR" but accessible name "Français" (`label-content-name-mismatch`).
 - **Lighthouse mobile 38 on the live site** (12 November 2026, default 4× slowdown, no GPU). Four causes, found with Lighthouse and a CPU profile: the globe library bundled a WebGPU renderer and the h3 hexagon library it never used here (880 KB of a 2 MB chunk, now stubbed out); every render built new date and number formatters (~0.6 s); the How to play heading faded in, so the first visit's largest text waited for a busy main thread; and the globe loaded and drew under that sheet. Now the median of 3 runs is 95–98 on the same machine. Lighthouse CI blocks a deploy under 85, and an E2E test checks the globe waits for the sheet to close.
+- **Blank page without WebGL:** Firefox on the CI runner has no GPU and turned WebGL off, so three.js threw while creating the globe. Nothing caught it, so React removed the whole page and every Firefox test timed out waiting for the guess box. Every local run passed. Any player with WebGL disabled or a blocklisted driver would have seen the same blank page. The globe now sits in an error boundary that shows a one-line message instead; an E2E test disables WebGL and wins a game (failed on the old code with CI's exact error). The CI Firefox now forces software WebGL so the globe tests still test the globe.
 
 ## Running the tests
 

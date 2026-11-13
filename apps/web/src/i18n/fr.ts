@@ -183,6 +183,8 @@ export const fr: Strings = {
   bandsHeading: 'L’échelle',
   start: 'Commencer',
   globeHint: 'Glisser pour tourner · Molette pour zoomer',
+  globeUnavailable:
+    'Le globe ne peut pas s’afficher dans ce navigateur. Les distances vous guident toujours.',
 
   offline: 'Serveur injoignable. Votre partie est enregistrée ; réessayez dans un instant.',
   retry: 'Réessayer',

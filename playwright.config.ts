@@ -42,7 +42,15 @@ export default defineConfig({
         { name: 'desktop', use: { ...devices['Desktop Chrome'], permissions: CLIPBOARD } },
         { name: 'mobile', use: { ...devices['Pixel 7'], permissions: CLIPBOARD }, grep: /@mobile/ },
         // NFR-10: the other engines run the whole suite on desktop.
-        { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
+        // Headless Firefox on a Linux runner turns WebGL off without a GPU: force the
+        // software renderer, so the globe tests test the globe, not the fallback.
+        {
+          name: 'firefox',
+          use: {
+            ...devices['Desktop Firefox'],
+            launchOptions: { firefoxUserPrefs: { 'webgl.force-enabled': true } },
+          },
+        },
         { name: 'webkit', use: { ...devices['Desktop Safari'] } },
       ],
   webServer: remote

@@ -4,6 +4,7 @@ import { AboutPanel } from './components/AboutPanel';
 import { Countdown } from './components/Countdown';
 import { StatsPanel } from './components/StatsPanel';
 import { GuessInput } from './components/GuessInput';
+import { GlobeBoundary } from './components/GlobeBoundary';
 import { GuessList } from './components/GuessList';
 import { HowToPlay } from './components/HowToPlay';
 import { Postcard } from './components/Postcard';
@@ -202,16 +203,24 @@ export function App() {
 
       <main className="globe-stage relative min-h-[26dvh] flex-1">
         {geo && (
-          <Suspense fallback={null}>
-            <Globe
-              geo={geo}
-              colors={colors}
-              labels={labels}
-              focus={answer ?? last?.code ?? null}
-              answer={answer}
-              reducedMotion={reducedMotion}
-            />
-          </Suspense>
+          <GlobeBoundary
+            fallback={
+              <p className="caption absolute inset-0 flex items-center justify-center p-6 text-center text-muted">
+                {en.globeUnavailable}
+              </p>
+            }
+          >
+            <Suspense fallback={null}>
+              <Globe
+                geo={geo}
+                colors={colors}
+                labels={labels}
+                focus={answer ?? last?.code ?? null}
+                answer={answer}
+                reducedMotion={reducedMotion}
+              />
+            </Suspense>
+          </GlobeBoundary>
         )}
         <div className="pointer-events-none absolute inset-x-0 top-0 hidden items-start justify-end p-4 md:flex">
           <div className="pointer-events-auto">{nav}</div>

@@ -221,6 +221,7 @@ export const en = {
   bandsHeading: 'The scale',
   start: 'Start playing',
   globeHint: 'Drag to turn · Scroll to zoom',
+  globeUnavailable: 'The globe can’t be shown in this browser. The distances still guide you.',
 
   offline: 'Can’t reach the server. Your game is saved; try again in a moment.',
   retry: 'Try again',
